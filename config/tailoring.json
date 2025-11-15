@@ -1,0 +1,333 @@
+{
+  "_comment": "Tailoring recipes for WoW Classic up to Phase 7 (Naxxramas)",
+  "_format": "Materials use 'Name xQuantity' format (e.g., 'Runecloth x12')",
+  "items": {
+    "Head": [
+      {
+        "name": "Bloodvine Lens",
+        "materials": [
+          "Bloodvine x10",
+          "Blood of the Mountain x1",
+          "Greater Eternal Essence x2",
+          "Living Essence x2"
+        ]
+      },
+      {
+        "name": "Truefaith Circlet",
+        "materials": [
+          "Mooncloth x8",
+          "Righteous Orb x4",
+          "Star Ruby x2"
+        ]
+      },
+      {
+        "name": "Felcloth Hood",
+        "materials": [
+          "Felcloth x8",
+          "Ironweb Spider Silk x2",
+          "Lesser Eternal Essence x2"
+        ]
+      },
+      {
+        "name": "Mooncloth Circlet",
+        "materials": [
+          "Mooncloth x6",
+          "Greater Eternal Essence x4",
+          "Ironweb Spider Silk x2"
+        ]
+      },
+      {
+        "name": "Wizardweave Turban",
+        "materials": [
+          "Bolt of Runecloth x8",
+          "Rugged Leather x4",
+          "Rune Thread x1"
+        ]
+      }
+    ],
+    "Shoulders": [
+      {
+        "name": "Bloodvine Vest",
+        "materials": [
+          "Bloodvine x20",
+          "Blood of the Mountain x2",
+          "Greater Eternal Essence x4",
+          "Living Essence x4"
+        ]
+      },
+      {
+        "name": "Truefaith Vestments",
+        "materials": [
+          "Mooncloth x12",
+          "Righteous Orb x6",
+          "Star Ruby x4"
+        ]
+      },
+      {
+        "name": "Felcloth Shoulders",
+        "materials": [
+          "Felcloth x6",
+          "Ironweb Spider Silk x2",
+          "Greater Eternal Essence x2"
+        ]
+      },
+      {
+        "name": "Mooncloth Shoulders",
+        "materials": [
+          "Mooncloth x5",
+          "Greater Eternal Essence x2",
+          "Ironweb Spider Silk x2"
+        ]
+      }
+    ],
+    "Chest": [
+      {
+        "name": "Robe of the Void",
+        "materials": [
+          "Felcloth x10",
+          "Dark Rune x4",
+          "Greater Eternal Essence x4"
+        ]
+      },
+      {
+        "name": "Robe of Winter Night",
+        "materials": [
+          "Felcloth x12",
+          "Greater Eternal Essence x6",
+          "Essence of Water x2",
+          "Essence of Air x2"
+        ]
+      },
+      {
+        "name": "Mooncloth Robe",
+        "materials": [
+          "Mooncloth x10",
+          "Greater Eternal Essence x4",
+          "Ironweb Spider Silk x4"
+        ]
+      },
+      {
+        "name": "Felcloth Robe",
+        "materials": [
+          "Felcloth x10",
+          "Ironweb Spider Silk x2",
+          "Greater Eternal Essence x2"
+        ]
+      },
+      {
+        "name": "Runecloth Robe",
+        "materials": [
+          "Bolt of Runecloth x10",
+          "Rugged Leather x2",
+          "Rune Thread x1"
+        ]
+      }
+    ],
+    "Waist": [
+      {
+        "name": "Belt of the Archmage",
+        "materials": [
+          "Felcloth x8",
+          "Rune Thread x1",
+          "Greater Eternal Essence x4"
+        ]
+      },
+      {
+        "name": "Mooncloth Belt",
+        "materials": [
+          "Mooncloth x4",
+          "Greater Eternal Essence x2",
+          "Ironweb Spider Silk x1"
+        ]
+      },
+      {
+        "name": "Runecloth Belt",
+        "materials": [
+          "Bolt of Runecloth x6",
+          "Rugged Leather x1",
+          "Rune Thread x1"
+        ]
+      }
+    ],
+    "Legs": [
+      {
+        "name": "Bloodvine Leggings",
+        "materials": [
+          "Bloodvine x15",
+          "Blood of the Mountain x2",
+          "Greater Eternal Essence x4",
+          "Living Essence x4"
+        ]
+      },
+      {
+        "name": "Mooncloth Leggings",
+        "materials": [
+          "Mooncloth x8",
+          "Greater Eternal Essence x4",
+          "Ironweb Spider Silk x2"
+        ]
+      },
+      {
+        "name": "Felcloth Pants",
+        "materials": [
+          "Felcloth x8",
+          "Ironweb Spider Silk x2",
+          "Greater Eternal Essence x2"
+        ]
+      },
+      {
+        "name": "Runecloth Pants",
+        "materials": [
+          "Bolt of Runecloth x8",
+          "Rugged Leather x2",
+          "Rune Thread x1"
+        ]
+      }
+    ],
+    "Feet": [
+      {
+        "name": "Boots of the Enchanter",
+        "materials": [
+          "Felcloth x6",
+          "Rune Thread x1",
+          "Greater Eternal Essence x4"
+        ]
+      },
+      {
+        "name": "Mooncloth Boots",
+        "materials": [
+          "Mooncloth x4",
+          "Greater Eternal Essence x2",
+          "Ironweb Spider Silk x2"
+        ]
+      },
+      {
+        "name": "Runecloth Boots",
+        "materials": [
+          "Bolt of Runecloth x6",
+          "Rugged Leather x2",
+          "Rune Thread x1"
+        ]
+      }
+    ],
+    "Hands": [
+      {
+        "name": "Hands of Power",
+        "materials": [
+          "Felcloth x6",
+          "Rune Thread x1",
+          "Greater Eternal Essence x4"
+        ]
+      },
+      {
+        "name": "Mooncloth Gloves",
+        "materials": [
+          "Mooncloth x4",
+          "Greater Eternal Essence x2",
+          "Ironweb Spider Silk x1"
+        ]
+      },
+      {
+        "name": "Runecloth Gloves",
+        "materials": [
+          "Bolt of Runecloth x6",
+          "Rugged Leather x1",
+          "Rune Thread x1"
+        ]
+      }
+    ],
+    "Back": [
+      {
+        "name": "Cloak of Warding",
+        "materials": [
+          "Mooncloth x4",
+          "Greater Eternal Essence x8",
+          "Guardian Stone x1"
+        ]
+      },
+      {
+        "name": "Cloak of Fire",
+        "materials": [
+          "Bolt of Runecloth x4",
+          "Essence of Fire x4",
+          "Greater Eternal Essence x6",
+          "Rune Thread x1"
+        ]
+      },
+      {
+        "name": "Runecloth Cloak",
+        "materials": [
+          "Bolt of Runecloth x5",
+          "Rugged Leather x2",
+          "Rune Thread x1"
+        ]
+      }
+    ],
+    "Bags": [
+      {
+        "name": "Mooncloth Bag",
+        "materials": [
+          "Mooncloth x4",
+          "Rune Thread x1"
+        ]
+      },
+      {
+        "name": "Core Felcloth Bag",
+        "materials": [
+          "Felcloth x8",
+          "Fiery Core x4",
+          "Rune Thread x1"
+        ]
+      },
+      {
+        "name": "Bottomless Bag",
+        "materials": [
+          "Bolt of Runecloth x18",
+          "Cured Rugged Hide x4",
+          "Rune Thread x1"
+        ]
+      },
+      {
+        "name": "Runecloth Bag",
+        "materials": [
+          "Bolt of Runecloth x5",
+          "Rugged Leather x2",
+          "Rune Thread x1"
+        ]
+      },
+      {
+        "name": "Big Bag of Enchantment",
+        "materials": [
+          "Felcloth x6",
+          "Cured Rugged Hide x2",
+          "Rune Thread x1"
+        ]
+      }
+    ],
+    "Shirt": [
+      {
+        "name": "Tuxedo Shirt",
+        "materials": [
+          "Bolt of Mageweave x6",
+          "Fine Thread x1"
+        ]
+      },
+      {
+        "name": "Formal White Shirt",
+        "materials": [
+          "Bolt of Runecloth x3",
+          "Bleach x2",
+          "Rune Thread x1"
+        ]
+      },
+      {
+        "name": "Cindercloth Vest",
+        "materials": [
+          "Bolt of Runecloth x6",
+          "Essence of Fire x4",
+          "Rune Thread x1"
+        ]
+      }
+    ]
+  }
+}

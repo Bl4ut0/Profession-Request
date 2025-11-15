@@ -1,0 +1,1157 @@
+{
+  "_comment": "Enchanting recipes compiled from all user screenshots.",
+  "_format": "Materials use 'Name xQuantity' format (e.g., 'Soul Dust x10')",
+  "items": {
+    "Head": [],
+    "Chest": [
+      {
+        "name": "Enchant Chest - Living Stats",
+        "materials": [
+          "Large Brilliant Shard x5",
+          "Crimson Shard x10",
+          "Mageblood Shard x2",
+          "Soul Dust x2"
+        ]
+      },
+      {
+        "name": "Enchant Chest - Greater Stats",
+        "materials": [
+          "Large Brilliant Shard x4",
+          "Crimson Shard x15",
+          "Dream Dust x10"
+        ]
+      },
+      {
+        "name": "Enchant Chest - Major Mana",
+        "materials": ["Dream Dust x3", "Large Brilliant Shard x6"]
+      },
+      {
+        "name": "Enchant Chest - Major Health",
+        "materials": ["Dream Dust x6", "Large Brilliant Shard x6"]
+      },
+      {
+        "name": "Enchant Chest - Superior Mana",
+        "materials": ["Dream Dust x2", "Wild Essence x2"]
+      },
+      {
+        "name": "Enchant Chest - Superior Health",
+        "materials": ["Large Brilliant Shard x6"]
+      },
+      {
+        "name": "Enchant Chest - Stats",
+        "materials": [
+          "Dream Dust x2",
+          "Fire Blossom x3",
+          "Wild Essence x2"
+        ]
+      },
+      {
+        "name": "Enchant Chest - Lesser Stats",
+        "materials": ["Dream Dust x2", "Soul Dust x2"]
+      },
+      {
+        "name": "Enchant Chest - Retricutioner",
+        "materials": ["Soul Dust x2", "Fire Blossom x2"]
+      },
+      {
+        "name": "Enchant Chest - Greater Mana",
+        "materials": ["Soul Dust x1"]
+      },
+      {
+        "name": "Enchant Chest - Greater Health",
+        "materials": ["Soul Dust x3"]
+      },
+      {
+        "name": "Enchant Chest - Minor Stats",
+        "materials": [
+          "Lesser Mystic Essence x2",
+          "Soul Dust x1",
+          "Lesser Eternal Essence x1"
+        ]
+      },
+      {
+        "name": "Enchant Chest - Mana",
+        "materials": ["Lesser Eternal Essence x2"]
+      },
+      {
+        "name": "Enchant Chest - Lesser Absorption",
+        "materials": [
+          "Wild Essence x2",
+          "Lesser Eternal Essence x1",
+          "Mystic Dust x1"
+        ]
+      },
+      {
+        "name": "Enchant Chest - Health",
+        "materials": ["Lesser Eternal Essence x4"]
+      },
+      {
+        "name": "Enchant Chest - Lesser Mana",
+        "materials": ["Lesser Eternal Essence x2"]
+      },
+      {
+        "name": "Enchant Chest - Lesser Health",
+        "materials": ["Lesser Eternal Essence x2"]
+      },
+      {
+        "name": "Enchant Chest - Minor Absorption",
+        "materials": ["Lesser Eternal Essence x2"]
+      },
+      {
+        "name": "Enchant Chest - Minor Mana",
+        "materials": ["Mystic Dust x1"]
+      },
+      {
+        "name": "Enchant Chest - Minor Health",
+        "materials": ["Lesser Eternal Essence x1"]
+      }
+    ],
+    "Legs": [],
+    "Feet": [
+      {
+        "name": "Enchant Boots - Greater Agility",
+        "materials": ["Large Brilliant Shard x8"]
+      },
+      {
+        "name": "Enchant Boots - Spirit",
+        "materials": ["Large Brilliant Shard x2", "Dream Dust x4"]
+      },
+      {
+        "name": "Enchant Boots - Greater Stamina",
+        "materials": ["Large Brilliant Shard x10"]
+      },
+      {
+        "name": "Enchant Boots - Agility",
+        "materials": ["Wild Essence x2"]
+      },
+      {
+        "name": "Enchant Boots - Minor Speed",
+        "materials": ["Dream Dust x2", "Wild Essence x2"]
+      },
+      {
+        "name": "Enchant Boots - Stamina",
+        "materials": ["Large Brilliant Shard x5"]
+      },
+      {
+        "name": "Enchant Boots - Lesser Spirit",
+        "materials": ["Soul Dust x2", "Lesser Eternal Essence x2"]
+      },
+      {
+        "name": "Enchant Boots - Lesser Stamina",
+        "materials": ["Lesser Mystic Essence x4"]
+      },
+      {
+        "name": "Enchant Boots - Lesser Agility",
+        "materials": ["Lesser Mystic Essence x2", "Soul Dust x2"]
+      },
+      {
+        "name": "Enchant Boots - Minor Agility",
+        "materials": ["Lesser Eternal Essence x6", "Lesser Mystic Essence x2"]
+      },
+      {
+        "name": "Enchant Boots - Minor Stamina",
+        "materials": ["Lesser Mystic Essence x8"]
+      }
+    ],
+    "Wrist": [
+      {
+        "name": "Enchant Bracer - Agility",
+        "materials": [
+          "Large Brilliant Shard x2",
+          "Crimson Shard x10",
+          "Soul Dust x2"
+        ]
+      },
+      {
+        "name": "Enchant Bracer - Greater Spellpower",
+        "materials": [
+          "Large Brilliant Shard x3",
+          "Crimson Shard x9",
+          "Soul Dust x2"
+        ]
+      },
+      {
+        "name": "Enchant Bracer - Spell Power",
+        "materials": [
+          "Large Brilliant Shard x2",
+          "Crimson Shard x20",
+          "Soul Dust x4",
+          "Fire Blossom x2",
+          "Wild Essence x2"
+        ]
+      },
+      {
+        "name": "Enchant Bracer - Healing Power",
+        "materials": [
+          "Large Brilliant Shard x2",
+          "Crimson Shard x20",
+          "Dream Dust x4",
+          "Wild Essence x6"
+        ]
+      },
+      {
+        "name": "Enchant Bracer - Superior Stamina",
+        "materials": ["Large Brilliant Shard x15"]
+      },
+      {
+        "name": "Enchant Bracer - Superior Strength",
+        "materials": ["Large Brilliant Shard x6", "Dream Dust x6"]
+      },
+      {
+        "name": "Enchant Bracer - Mana Regeneration",
+        "materials": [
+          "Dream Dust x16",
+          "Large Brilliant Shard x2",
+          "Soul Dust x4"
+        ]
+      },
+      {
+        "name": "Enchant Bracer - Superior Spirit",
+        "materials": ["Large Brilliant Shard x3", "Dream Dust x10"]
+      },
+      {
+        "name": "Enchant Bracer - Greater Intellect",
+        "materials": ["Large Brilliant Shard x3"]
+      },
+      {
+        "name": "Enchant Bracer - Greater Stamina",
+        "materials": ["Dream Dust x5"]
+      },
+      {
+        "name": "Enchant Bracer - Greater Strength",
+        "materials": ["Dream Dust x2", "Wild Essence x2"]
+      },
+      {
+        "name": "Enchant Bracer - Deflection",
+        "materials": ["Dream Dust x2", "Wild Essence x2"]
+      },
+      {
+        "name": "Enchant Bracer - Greater Spirit",
+        "materials": ["Large Brilliant Shard x3"]
+      },
+      {
+        "name": "Enchant Bracer - Intellect",
+        "materials": ["Large Brilliant Shard x2"]
+      },
+      {
+        "name": "Enchant Bracer - Strength",
+        "materials": ["Lesser Eternal Essence x1"]
+      },
+      {
+        "name": "Enchant Bracer - Lesser Deflection",
+        "materials": ["Soul Dust x2", "Lesser Eternal Essence x2"]
+      },
+      {
+        "name": "Enchant Bracer - Stamina",
+        "materials": ["Soul Dust x6"]
+      },
+      {
+        "name": "Enchant Bracer - Spirit",
+        "materials": ["Soul Dust x1"]
+      },
+      {
+        "name": "Enchant Bracer - Lesser Intellect",
+        "materials": ["Lesser Eternal Essence x2"]
+      },
+      {
+        "name": "Enchant Bracer - Lesser Strength",
+        "materials": ["Lesser Eternal Essence x2"]
+      },
+      {
+        "name": "Enchant Bracer - Lesser Stamina",
+        "materials": ["Lesser Mystic Essence x2"]
+      },
+      {
+        "name": "Enchant Bracer - Lesser Spirit",
+        "materials": ["Lesser Eternal Essence x2"]
+      },
+      {
+        "name": "Enchant Bracer - Minor Agility",
+        "materials": ["Lesser Eternal Essence x2"]
+      },
+      {
+        "name": "Enchant Bracer - Minor Strength",
+        "materials": ["Lesser Eternal Essence x5"]
+      },
+      {
+        "name": "Enchant Bracer - Minor Deflect",
+        "materials": ["Wild Essence x2", "Lesser Eternal Essence x2"]
+      },
+      {
+        "name": "Enchant Bracer - Minor Health",
+        "materials": ["Lesser Eternal Essence x2"]
+      },
+      {
+        "name": "Enchant Bracer - Minor Spirit",
+        "materials": ["Lesser Eternal Essence x2"]
+      },
+      {
+        "name": "Enchant Bracer - Minor Stamina",
+        "materials": ["Lesser Eternal Essence x3"]
+      }
+    ],
+    "Hands": [
+      {
+        "name": "Enchant Gloves - Arcane Power",
+        "materials": [
+          "Large Brilliant Shard x2",
+          "Crimson Shard x5",
+          "Oasis Dust x2"
+        ]
+      },
+      {
+        "name": "Enchant Gloves - Holy Power",
+        "materials": [
+          "Large Brilliant Shard x5",
+          "Crimson Shard x5",
+          "Soul Dust x2"
+        ]
+      },
+      {
+        "name": "Enchant Gloves - Superior Strength",
+        "materials": [
+          "Large Brilliant Shard x7",
+          "Crimson Shard x21",
+          "Soul Dust x2"
+        ]
+      },
+      {
+        "name": "Enchant Gloves - Fire Power",
+        "materials": [
+          "Large Brilliant Shard x2",
+          "Crimson Shard x10",
+          "Fire Blossom x4"
+        ]
+      },
+      {
+        "name": "Enchant Gloves - Frost Power",
+        "materials": [
+          "Large Brilliant Shard x3",
+          "Crimson Shard x10",
+          "Soul Dust x4"
+        ]
+      },
+      {
+        "name": "Enchant Gloves - Healing Power",
+        "materials": [
+          "Large Brilliant Shard x3",
+          "Crimson Shard x8",
+          "Wild Essence x4",
+          "Nexus Crystal x1"
+        ]
+      },
+      {
+        "name": "Enchant Gloves - Shadow Power",
+        "materials": [
+          "Large Brilliant Shard x3",
+          "Crimson Shard x10",
+          "Soul Dust x6"
+        ]
+      },
+      {
+        "name": "Enchant Gloves - Superior Agility",
+        "materials": [
+          "Large Brilliant Shard x3",
+          "Crimson Shard x8",
+          "Soul Dust x4"
+        ]
+      },
+      {
+        "name": "Enchant Gloves - Threat",
+        "materials": [
+          "Large Brilliant Shard x4",
+          "Crimson Shard x6",
+          "Dream Dust x8"
+        ]
+      },
+      {
+        "name": "Enchant Gloves - Greater Strength",
+        "materials": ["Large Brilliant Shard x4", "Dream Dust x4"]
+      },
+      {
+        "name": "Enchant Gloves - Greater Agility",
+        "materials": ["Large Brilliant Shard x3", "Dream Dust x3"]
+      },
+      {
+        "name": "Enchant Gloves - Minor Haste",
+        "materials": ["Dream Dust x2", "Fire Blossom x2"]
+      },
+      {
+        "name": "Enchant Gloves - Riding Skill",
+        "materials": ["Dream Dust x2", "Fire Blossom x3"]
+      },
+      {
+        "name": "Enchant Gloves - Advanced Herbalism",
+        "materials": ["Wild Essence x3", "Soul Dust x3"]
+      },
+      {
+        "name": "Enchant Gloves - Strength",
+        "materials": ["Wild Essence x2", "Dream Dust x3"]
+      },
+      {
+        "name": "Enchant Gloves - Advanced Mining",
+        "materials": ["Large Brilliant Shard x3", "Soul Dust x3"]
+      },
+      {
+        "name": "Enchant Gloves - Agility",
+        "materials": ["Wild Essence x2", "Soul Dust x2"]
+      },
+      {
+        "name": "Enchant Gloves - Skinning",
+        "materials": ["Dream Dust x3", "Crimson Shard x2"]
+      },
+      {
+        "name": "Enchant Gloves - Fishing",
+        "materials": ["Soul Dust x3", "Lesser Eternal Essence x1"]
+      },
+      {
+        "name": "Enchant Gloves - Herbalism",
+        "materials": ["Soul Dust x2", "Wild Essence x1"]
+      },
+      {
+        "name": "Enchant Gloves - Mining",
+        "materials": ["Soul Dust x3", "Lesser Eternal Essence x1"]
+      }
+    ],
+    "Shoulders": [],
+    "Back": [
+      {
+        "name": "Enchant Cloak - Agility",
+        "materials": ["Large Brilliant Shard x3", "Crimson Shard x9"]
+      },
+      {
+        "name": "Enchant Cloak - Dodge",
+        "materials": [
+          "Large Brilliant Shard x3",
+          "Crimson Shard x8",
+          "Dream Dust x8"
+        ]
+      },
+      {
+        "name": "Enchant Cloak - Greater Fire Resistance",
+        "materials": [
+          "Large Brilliant Shard x3",
+          "Crimson Shard x8",
+          "Fire Blossom x4"
+        ]
+      },
+      {
+        "name": "Enchant Cloak - Greater Nature Resistance",
+        "materials": [
+          "Large Brilliant Shard x2",
+          "Crimson Shard x8",
+          "Dream Dust x4"
+        ]
+      },
+      {
+        "name": "Enchant Cloak - Stealth",
+        "materials": [
+          "Large Brilliant Shard x3",
+          "Crimson Shard x8",
+          "Wild Essence x2"
+        ]
+      },
+      {
+        "name": "Enchant Cloak - Subtlety",
+        "materials": [
+          "Large Brilliant Shard x4",
+          "Crimson Shard x6",
+          "Soul Dust x2"
+        ]
+      },
+      {
+        "name": "Enchant Cloak - Superior Defense",
+        "materials": ["Large Brilliant Shard x8"]
+      },
+      {
+        "name": "Enchant Cloak - Greater Resistance",
+        "materials": [
+          "Large Brilliant Shard x2",
+          "Dream Dust x10",
+          "Fire Blossom x2",
+          "Wild Essence x4",
+          "Soul Dust x4"
+        ]
+      },
+      {
+        "name": "Enchant Cloak - Lesser Agility",
+        "materials": ["Wild Essence x2"]
+      },
+      {
+        "name": "Enchant Cloak - Greater Defense",
+        "materials": ["Large Brilliant Shard x3"]
+      },
+      {
+        "name": "Enchant Cloak - Resistance",
+        "materials": ["Wild Essence x2"]
+      },
+      {
+        "name": "Enchant Cloak - Fire Resistance",
+        "materials": ["Soul Dust x2", "Fire Blossom x2"]
+      },
+      {
+        "name": "Enchant Cloak - Defense",
+        "materials": ["Soul Dust x3", "Lesser Mystic Essence x3"]
+      },
+      {
+        "name": "Enchant Cloak - Lesser Shadow Resistance",
+        "materials": ["Lesser Mystic Essence x1", "Soul Dust x2"]
+      },
+      {
+        "name": "Enchant Cloak - Lesser Fire Resistance",
+        "materials": ["Holy Essence x1", "Lesser Mystic Essence x2"]
+      },
+      {
+        "name": "Enchant Cloak - Lesser Protection",
+        "materials": ["Lesser Eternal Essence x6", "Lesser Mystic Essence x1"]
+      },
+      {
+        "name": "Enchant Cloak - Minor Agility",
+        "materials": ["Holy Essence x2"]
+      },
+      {
+        "name": "Enchant Cloak - Minor Protection",
+        "materials": ["Lesser Eternal Essence x2", "Wild Essence x2"]
+      },
+      {
+        "name": "Enchant Cloak - Minor Resistance",
+        "materials": ["Lesser Eternal Essence x2", "Lesser Mystic Essence x2"]
+      }
+    ],
+    "Waist": [],
+    "Neck": [],
+    "Ring": [],
+    "2H Weapon": [
+      {
+        "name": "Enchant 2H Weapon - Spellblasting",
+        "materials": [
+          "Large Brilliant Shard x3",
+          "Crimson Shard x24",
+          "Fire Blossom x6"
+        ]
+      },
+      {
+        "name": "Enchant 2H Weapon - Grand Arcanist",
+        "materials": [
+          "Large Brilliant Shard x10",
+          "Wild Essence x4",
+          "Crimson Shard x4",
+          "Fire Blossom x4"
+        ]
+      },
+      {
+        "name": "Enchant 2H Weapon - Grand Inquisitor",
+        "materials": [
+          "Large Brilliant Shard x10",
+          "Crimson Shard x4",
+          "Fire Blossom x4"
+        ]
+      },
+      {
+        "name": "Enchant 2H Weapon - Major Intellect",
+        "materials": ["Large Brilliant Shard x12", "Soul Dust x2"]
+      },
+      {
+        "name": "Enchant 2H Weapon - Major Spirit",
+        "materials": ["Large Brilliant Shard x12", "Dream Dust x2"]
+      },
+      {
+        "name": "Enchant 2H Weapon - Superior Impact",
+        "materials": ["Large Brilliant Shard x4", "Dream Dust x10"]
+      },
+      {
+        "name": "Enchant 2H Weapon - Agility",
+        "materials": [
+          "Dream Dust x10",
+          "Large Brilliant Shard x6",
+          "Soul Dust x14",
+          "Dream Shard x4"
+        ]
+      },
+      {
+        "name": "Enchant 2H Weapon - Greater Impact",
+        "materials": ["Fire Blossom x2", "Wild Essence x2"]
+      },
+      {
+        "name": "Enchant 2H Weapon - Impact",
+        "materials": ["Dream Dust x2", "Soul Dust x4"]
+      },
+      {
+        "name": "Enchant 2H Weapon - Lesser Impact",
+        "materials": ["Lesser Eternal Essence x3", "Soul Dust x2"]
+      },
+      {
+        "name": "Enchant 2H Weapon - Lesser Spirit",
+        "materials": ["Lesser Eternal Essence x6"]
+      },
+      {
+        "name": "Enchant 2H Weapon - Lesser Intellect",
+        "materials": ["Lesser Eternal Essence x3"]
+      },
+      {
+        "name": "Enchant 2H Weapon - Minor Impact",
+        "materials": ["Wild Essence x4", "Lesser Eternal Essence x1"]
+      }
+    ],
+    "Weapon": [
+      {
+        "name": "Enchant Weapon - Grand Crusader",
+        "materials": [
+          "Large Brilliant Shard x5",
+          "Wild Essence x2",
+          "Crimson Shard x4",
+          "Fire Blossom x2"
+        ]
+      },
+      {
+        "name": "Enchant Weapon - Grand Sorcerer",
+        "materials": [
+          "Large Brilliant Shard x6",
+          "Wild Essence x2",
+          "Crimson Shard x2"
+        ]
+      },
+      {
+        "name": "Enchant Weapon - Superior Striking",
+        "materials": ["Large Brilliant Shard x2", "Dream Dust x10"]
+      },
+      {
+        "name": "Enchant Weapon - Crusader",
+        "materials": ["Large Brilliant Shard x4", "Crimson Shard x2"]
+      },
+      {
+        "name": "Enchant Weapon - Healing Power",
+        "materials": [
+          "Large Brilliant Shard x4",
+          "Crimson Shard x8",
+          "Dream Dust x6",
+          "Wild Essence x4",
+          "Nexus Crystal x1"
+        ]
+      },
+      {
+        "name": "Enchant Weapon - Lifestealing",
+        "materials": [
+          "Large Brilliant Shard x6",
+          "Soul Dust x6",
+          "Dream Dust x6"
+        ]
+      },
+      {
+        "name": "Enchant Weapon - Mighty Intellect",
+        "materials": [
+          "Large Brilliant Shard x15",
+          "Dream Dust x12",
+          "Soul Dust x20"
+        ]
+      },
+      {
+        "name": "Enchant Weapon - Mighty Spirit",
+        "materials": [
+          "Large Brilliant Shard x10",
+          "Dream Dust x8",
+          "Soul Dust x15"
+        ]
+      },
+      {
+        "name": "Enchant Weapon - Spell Power",
+        "materials": [
+          "Large Brilliant Shard x4",
+          "Dream Dust x12",
+          "Fire Blossom x4",
+          "Wild Essence x4",
+          "Soul Dust x2"
+        ]
+      },
+      {
+        "name": "Enchant Weapon - Unholy Weapon",
+        "materials": ["Large Brilliant Shard x4", "Soul Dust x4"]
+      },
+      {
+        "name": "Enchant Weapon - Agility",
+        "materials": [
+          "Dream Dust x6",
+          "Large Brilliant Shard x6",
+          "Soul Dust x4",
+          "Dream Shard x2"
+        ]
+      },
+      {
+        "name": "Enchant Weapon - Strength",
+        "materials": [
+          "Dream Dust x6",
+          "Large Brilliant Shard x6",
+          "Soul Dust x4",
+          "Dream Shard x2"
+        ]
+      },
+      {
+        "name": "Enchant Weapon - Icy Chill",
+        "materials": [
+          "Large Brilliant Shard x4",
+          "Soul Dust x2",
+          "Dream Dust x4",
+          "Wild Essence x8"
+        ]
+      },
+      {
+        "name": "Enchant Weapon - Fiery Weapon",
+        "materials": ["Dream Dust x4", "Fire Blossom x4"]
+      },
+      {
+        "name": "Enchant Weapon - Greater Striking",
+        "materials": ["Dream Dust x2", "Wild Essence x2"]
+      },
+      {
+        "name": "Enchant Weapon - Demonslaying",
+        "materials": ["Dream Dust x2", "Fire Blossom x2"]
+      },
+      {
+        "name": "Enchant Weapon - Dismantle",
+        "materials": ["Wild Essence x4", "Soul Dust x2", "Fire Blossom x2"]
+      },
+      {
+        "name": "Enchant Weapon - Striking",
+        "materials": ["Soul Dust x2", "Lesser Eternal Essence x2"]
+      },
+      {
+        "name": "Enchant Weapon - Winter's Might",
+        "materials": [
+          "Soul Dust x3",
+          "Lesser Mystic Essence x3",
+          "Wild Essence x2"
+        ]
+      },
+      {
+        "name": "Enchant Weapon - Lesser Beastslyer",
+        "materials": ["Soul Dust x2", "Fire Blossom x1"]
+      },
+      {
+        "name": "Enchant Weapon - Lesser Elemental Slayer",
+        "materials": ["Soul Dust x2", "Stone x2"]
+      },
+      {
+        "name": "Enchant Weapon - Lesser Striking",
+        "materials": ["Lesser Mystic Essence x2", "Lesser Eternal Essence x2"]
+      },
+      {
+        "name": "Enchant Weapon - Minor Beastslyer",
+        "materials": ["Wild Essence x2", "Lesser Eternal Essence x2"]
+      },
+      {
+        "name": "Enchant Weapon - Minor Striking",
+        "materials": ["Wild Essence x2", "Lesser Eternal Essence x2"]
+      }
+    ],
+    "Off-Hand": [
+      {
+        "name": "Enchant Off-Hand - Excellent Spirit",
+        "materials": ["Large Brilliant Shard x2", "Crimson Shard x18"]
+      },
+      {
+        "name": "Enchant Off-Hand - Superior Intellect",
+        "materials": ["Large Brilliant Shard x2", "Crimson Shard x18"]
+      },
+      {
+        "name": "Enchant Off-Hand - Wisdom",
+        "materials": [
+          "Large Brilliant Shard x6",
+          "Crimson Shard x18",
+          "Soul Dust x2"
+        ]
+      }
+    ],
+    "Shield": [
+      {
+        "name": "Enchant Shield - Critical Strike",
+        "materials": ["Large Brilliant Shard x5", "Crimson Shard x15"]
+      },
+      {
+        "name": "Enchant Shield - Excellent Stamina",
+        "materials": ["Large Brilliant Shard x6", "Crimson Shard x18"]
+      },
+      {
+        "name": "Enchant Shield - Law of Nature",
+        "materials": [
+          "Large Brilliant Shard x4",
+          "Crimson Shard x12",
+          "Fire Blossom x4",
+          "Wild Essence x4"
+        ]
+      },
+      {
+        "name": "Enchant Shield - Superior Spirit",
+        "materials": ["Large Brilliant Shard x2", "Dream Dust x4"]
+      },
+      {
+        "name": "Enchant Shield - Greater Stamina",
+        "materials": ["Dream Dust x10"]
+      },
+      {
+        "name": "Enchant Shield - Frost Resistance",
+        "materials": ["Dream Dust x2", "Wild Essence x2"]
+      },
+      {
+        "name": "Enchant Shield - Greater Spirit",
+        "materials": ["Dream Dust x2", "Wild Essence x2"]
+      },
+      {
+        "name": "Enchant Shield - Stamina",
+        "materials": ["Large Brilliant Shard x5"]
+      },
+      {
+        "name": "Enchant Shield - Lesser Block",
+        "materials": ["Soul Dust x2", "Lesser Eternal Essence x2"]
+      },
+      {
+        "name": "Enchant Shield - Spirit",
+        "materials": ["Soul Dust x2", "Lesser Eternal Essence x1"]
+      },
+      {
+        "name": "Enchant Shield - Lesser Stamina",
+        "materials": ["Soul Dust x2", "Lesser Mystic Essence x2"]
+      },
+      {
+        "name": "Enchant Shield - Lesser Spirit",
+        "materials": ["Holy Essence x2", "Lesser Eternal Essence x4"]
+      },
+      {
+        "name": "Enchant Shield - Lesser Protection",
+        "materials": ["Holy Essence x2", "Lesser Eternal Essence x6"]
+      },
+      {
+        "name": "Enchant Shield - Minor Stamina",
+        "materials": ["Holy Essence x2", "Lesser Eternal Essence x2"]
+      }
+    ]
+  },
+  "other_recipes": {
+    "Rods": [
+      {
+        "name": "Runed Arcanite Rod",
+        "materials": [
+          "Arcanite Rod x1",
+          "Large Brilliant Shard x1",
+          "Dream Dust x10",
+          "Soul Dust x4",
+          "Wild Essence x2"
+        ]
+      },
+      {
+        "name": "Runed Truesilver Rod",
+        "materials": [
+          "Truesilver Rod x1",
+          "Large Brilliant Shard x1",
+          "Dream Dust x2",
+          "Soul Dust x2"
+        ]
+      },
+      {
+        "name": "Runed Golden Rod",
+        "materials": [
+          "Golden Rod x1",
+          "Soul Dust x5",
+          "Lesser Mystic Essence x2",
+          "Pearl x2"
+        ]
+      },
+      {
+        "name": "Runed Silver Rod",
+        "materials": [
+          "Silver Rod x1",
+          "Lesser Mystic Essence x6",
+          "Holy Essence x3",
+          "Shadowgem x1"
+        ]
+      },
+      {
+        "name": "Runed Copper Rod",
+        "materials": [
+          "Copper Rod x1",
+          "Lesser Eternal Essence x1",
+          "Small Lustrous Shard x2"
+        ]
+      }
+    ],
+    "Oils_and_Coatings": [
+      {
+        "name": "Brilliant Mana Oil",
+        "materials": [
+          "Large Brilliant Shard x2",
+          "Dream Dust x3",
+          "Soul Dust x1",
+          "Empty Vials x1"
+        ]
+      },
+      {
+        "name": "Brilliant Wizard Oil",
+        "materials": [
+          "Large Brilliant Shard x2",
+          "Fire Blossom x3",
+          "Soul Dust x1",
+          "Empty Vials x1"
+        ]
+      },
+      {
+        "name": "Wizard Oil",
+        "materials": ["Dream Dust x3", "Fire Blossom x2", "Empty Vials x1"]
+      },
+      {
+        "name": "Conductive Shield Coating",
+        "materials": [
+          "Large Brilliant Shard x2",
+          "Fire Blossom x2",
+          "Soul Dust x4"
+        ]
+      },
+      {
+        "name": "Lesser Mana Oil",
+        "materials": ["Dream Dust x3", "Soul Dust x2", "Empty Vials x1"]
+      },
+      {
+        "name": "Lesser Wizard Oil",
+        "materials": ["Dream Dust x3", "Fire Blossom x2", "Empty Vials x1"]
+      },
+      {
+        "name": "Minor Mana Oil",
+        "materials": [
+          "Lesser Eternal Essence x3",
+          "Holy Essence x2",
+          "Empty Vials x1"
+        ]
+      },
+      {
+        "name": "Blackfathom Mana Oil",
+        "materials": ["Empty Vials x1", "Lesser Mystic Essence x5"]
+      },
+      {
+        "name": "Minor Wizard Oil",
+        "materials": [
+          "Lesser Eternal Essence x2",
+          "Empty Vials x1",
+          "Small Lustrous Shard x1"
+        ]
+      }
+    ],
+    "Sigils_Idols_Librams_and_Misc": [
+      {
+        "name": "Scroll: Wrath of the Swarm",
+        "materials": ["Large Brilliant Shard x2", "Soul Dust x2"]
+      },
+      {
+        "name": "Speedstone",
+        "materials": [
+          "Large Brilliant Shard x10",
+          "Crimson Shard x6",
+          "Dream Dust x20"
+        ]
+      },
+      {
+        "name": "Tear of the Dreamer",
+        "materials": [
+          "Large Brilliant Shard x10",
+          "Crimson Shard x10",
+          "Dream Dust x10"
+        ]
+      },
+      {
+        "name": "Totem of Flowing Magma",
+        "materials": [
+          "Large Brilliant Shard x3",
+          "Crimson Shard x10",
+          "Dream Dust x2",
+          "Wild Essence x3"
+        ]
+      },
+      {
+        "name": "Totem of Pyroclastic Thunder",
+        "materials": [
+          "Large Brilliant Shard x3",
+          "Crimson Shard x10",
+          "Dream Dust x2",
+          "Wild Essence x3"
+        ]
+      },
+      {
+        "name": "Totem of Thunderous Strikes",
+        "materials": [
+          "Large Brilliant Shard x3",
+          "Crimson Shard x10",
+          "Dream Dust x2",
+          "Wild Essence x3"
+        ]
+      },
+      {
+        "name": "Magnificent Trollshine",
+        "materials": [
+          "Large Brilliant Shard x3",
+          "Dream Dust x3",
+          "Wild Essence x2"
+        ]
+      },
+      {
+        "name": "Sigil of Flowing Waters",
+        "materials": ["Large Brilliant Shard x1"]
+      },
+      {
+        "name": "Enchanted Mushroom",
+        "materials": [
+          "Large Brilliant Shard x4",
+          "Crimson Shard x20",
+          "Dream Dust x3",
+          "Wild Essence x2"
+        ]
+      },
+      {
+        "name": "Enchanted Prayer Tome",
+        "materials": [
+          "Large Brilliant Shard x3",
+          "Crimson Shard x10",
+          "Dream Dust x2",
+          "Wild Essence x4"
+        ]
+      },
+      {
+        "name": "Enchanted Repellent",
+        "materials": [
+          "Large Brilliant Shard x3",
+          "Crimson Shard x6",
+          "Dream Dust x2"
+        ]
+      },
+      {
+        "name": "Enchanted Stopwatch",
+        "materials": [
+          "Large Brilliant Shard x6",
+          "Dream Dust x6",
+          "Wild Essence x4"
+        ]
+      },
+      {
+        "name": "Enchanted Totem",
+        "materials": [
+          "Large Brilliant Shard x3",
+          "Crimson Shard x10",
+          "Dream Dust x2",
+          "Wild Essence x3"
+        ]
+      },
+      {
+        "name": "Idol of Feline Ferocity",
+        "materials": [
+          "Large Brilliant Shard x2",
+          "Crimson Shard x20",
+          "Dream Dust x3",
+          "Fire Blossom x4"
+        ]
+      },
+      {
+        "name": "Idol of Sidereal Wrath",
+        "materials": [
+          "Large Brilliant Shard x2",
+          "Crimson Shard x20",
+          "Dream Dust x3",
+          "Fire Blossom x4"
+        ]
+      },
+      {
+        "name": "Idol of Ursin Power",
+        "materials": [
+          "Large Brilliant Shard x2",
+          "Crimson Shard x20",
+          "Dream Dust x3",
+          "Fire Blossom x4"
+        ]
+      },
+      {
+        "name": "Libram of Righteousness",
+        "materials": [
+          "Large Brilliant Shard x3",
+          "Crimson Shard x10",
+          "Dream Dust x2",
+          "Wild Essence x4"
+        ]
+      },
+      {
+        "name": "Libram of Sanctity",
+        "materials": [
+          "Large Brilliant Shard x3",
+          "Crimson Shard x10",
+          "Dream Dust x2",
+          "Wild Essence x4"
+        ]
+      },
+      {
+        "name": "Libram of the Exorcist",
+        "materials": [
+          "Large Brilliant Shard x3",
+          "Crimson Shard x10",
+          "Dream Dust x2",
+          "Wild Essence x4"
+        ]
+      },
+      {
+        "name": "Lodestone of Retaliation",
+        "materials": [
+          "Large Brilliant Shard x10",
+          "Crimson Shard x5",
+          "Dream Dust x4",
+          "Fire Blossom x10"
+        ]
+      },
+      {
+        "name": "Ruby-Encrusted Broach",
+        "materials": [
+          "Large Brilliant Shard x10",
+          "Crimson Shard x5",
+          "Dream Dust x4",
+          "Fire Blossom x10"
+        ]
+      },
+      {
+        "name": "Smoking Heart of the Mountain",
+        "materials": ["Dream Dust x1", "Fire Blossom x2", "Soul Dust x3"]
+      },
+      {
+        "name": "Enchanted Leather",
+        "materials": ["Leather x2", "Dream Dust x2"]
+      },
+      {
+        "name": "Enchanted Thorium",
+        "materials": ["Thorium Bar x2", "Large Brilliant Shard x3"]
+      },
+      {
+        "name": "Sigil of Living Dreams",
+        "materials": ["Dream Dust x5"]
+      },
+      {
+        "name": "Sigil of Innovation",
+        "materials": ["Dream Dust x5"]
+      },
+      {
+        "name": "Lesser Mystic Wand",
+        "materials": ["Runecloth x1", "Soul Dust x2"]
+      },
+      {
+        "name": "Greater Mystic Wand",
+        "materials": ["Iron Bar x1", "Soul Dust x1", "Lesser Eternal Essence x1"]
+      },
+      {
+        "name": "Greater Magic Wand",
+        "materials": ["Simple Wood x1", "Lesser Eternal Essence x2"]
+      },
+      {
+        "name": "Lesser Magic Wand",
+        "materials": ["Simple Wood x1", "Small Lustrous Shard x2"]
+      },
+      {
+        "name": "Scroll of Spatial Mending",
+        "materials": ["Runecloth x2", "Lesser Eternal Essence x4"]
+      },
+      {
+        "name": "Charged Scale of Onyxia",
+        "materials": ["Onyxia Scale x1", "Soul Dust x2", "Lesser Eternal Essence x2"]
+      }
+    ]
+  }
+}
