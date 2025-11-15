@@ -39,6 +39,14 @@ A professional Discord bot for managing World of Warcraft profession requests wi
 - Discord bot application with bot token
 - Discord server with Developer Mode enabled
 
+### Dependencies
+The bot uses the following npm packages (automatically installed with `npm install`):
+- **discord.js** v14.19.2 - Discord API wrapper
+- **sqlite** v5.1.1 & **sqlite3** v5.1.7 - Database storage
+- **dotenv** v16.5.0 - Environment variable management
+- **date-fns** v4.1.0 - Date/time utilities
+- **puppeteer** v24.30.0 - Web automation (for advanced features)
+
 ### Installation
 
 1. **Clone the repository**
