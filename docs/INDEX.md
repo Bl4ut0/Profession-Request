@@ -180,23 +180,25 @@ Welcome to the Request Wolves Bot documentation. This folder contains comprehens
    - Visual examples and patterns
    - Common mistakes to avoid
    - **→ START HERE when implementing cleanup in new flows**
-   - profession.slot.itemName format
-   - Adding new professions guide
-   - Performance benefits (800x faster with caching)
 
-22. **[21-CODE_REDUNDANCY_AUDIT.md](21-CODE_REDUNDANCY_AUDIT.md)** 🧹 **CODE CLEANUP**
-   - Comprehensive code redundancy audit
-   - Removed deprecated utilities (configLoader.js, sessionCache.js)
-   - Removed deprecated config properties (tempChannelTTL, confirmationDisplayTime)
-   - Verified all cleanup systems remain operational
-   - 111 lines of redundant code removed
-   - Zero breaking changes
-
-23. **[PROFESSION_DATA_FORMAT.md](PROFESSION_DATA_FORMAT.md)** 📝 **DATA FORMAT GUIDE**
+25. **[PROFESSION_DATA_FORMAT.md](PROFESSION_DATA_FORMAT.md)** 📝 **DATA FORMAT GUIDE**
    - JSON structure for profession files
    - Slot/category naming standards
    - Material format specifications
+   - profession.slot.itemName format
+   - Adding new professions guide
    - Examples and validation guide
+   - Performance benefits (800x faster with caching)
+
+26. **[24-PRODUCTION_OPTIMIZATION_PLAN.md](24-PRODUCTION_OPTIMIZATION_PLAN.md)** 🚀 **POST-LAUNCH OPTIMIZATION**
+   - Performance optimization roadmap (post-launch)
+   - Phase 1: Safe speed optimizations (30-50% improvement)
+   - Phase 2: Aggressive optimizations (50-70% improvement)
+   - Member caching implementation
+   - Confirmation delay tuning
+   - Monitoring and validation procedures
+   - Rollback procedures and success criteria
+   - **→ REVIEW AFTER 1 WEEK IN PRODUCTION**
 
 ---
 
@@ -292,6 +294,11 @@ The following historical documents have been moved to `docs/archive/` as they do
 → Read **07-DEPRECATION_STRATEGY.md**  
 → Check compatibility matrix  
 → Follow implementation roadmap
+
+### I want to optimize bot performance after launch
+→ Read **24-PRODUCTION_OPTIMIZATION_PLAN.md** (post-launch roadmap)  
+→ Review Phase 1 safe optimizations  
+→ Follow monitoring and validation procedures
 
 ---
 
