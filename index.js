@@ -1,4 +1,5 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 
 const { Client, GatewayIntentBits, Partials, Collection } = require('discord.js');
 const { registerCommands } = require('./utils/commandRegistrar');
@@ -11,7 +12,6 @@ const { scheduleAutomaticBackups } = require('./utils/databaseBackup');
 const { clearAllTracking } = require('./utils/cleanupService');
 const config = require('./config/config.js');
 const fs = require('fs');
-const path = require('path');
 const log = require('./utils/logWriter');
 
 const client = new Client({
