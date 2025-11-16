@@ -45,32 +45,64 @@ let professionMetadata = {};
 /**
  * Load all profession data files from the config directory into memory
  * This runs once at bot startup for optimal performance
+ * Only loads professions listed in config.enabledProfessions
  * 
  * @returns {Object} Summary of loaded professions
  */
 function loadProfessions() {
+  const config = require('../config/config.js');
   const configDir = path.join(__dirname, '../config');
-  const professionFiles = fs.readdirSync(configDir).filter(file => 
-    file.endsWith('.json') && file !== 'config.js.example'
-  );
+  
+  // Only load professions that are enabled in config
+  const enabledProfessions = config.enabledProfessions || [];
+  
+  if (enabledProfessions.length === 0) {
+    log.warn('⚠️ No professions enabled in config.enabledProfessions');
+    return { professionsLoaded: 0, totalItems: 0, professions: [] };
+  }
 
   let totalRecipes = 0;
   let totalProfessions = 0;
+  const missingProfessions = [];
 
-  log.info(`🔄 Loading profession data files...`);
+  log.info(`🔄 Loading profession data files from config...`);
 
-  for (const file of professionFiles) {
-    const professionName = path.basename(file, '.json');
-    const filePath = path.join(configDir, file);
+  for (const professionName of enabledProfessions) {
+    const fileName = `${professionName}.json`;
+    const filePath = path.join(configDir, fileName);
+
+    // Check if the profession file exists
+    if (!fs.existsSync(filePath)) {
+      log.error(`❌ Profession file not found: ${fileName} (required by config.enabledProfessions)`);
+      missingProfessions.push(professionName);
+      continue;
+    }
 
     try {
       // Read and parse the profession file
       const rawData = fs.readFileSync(filePath, 'utf8');
-      const professionData = JSON.parse(rawData);
+      
+      // Validate file is not empty
+      if (!rawData || rawData.trim().length === 0) {
+        log.error(`❌ Profession file is empty: ${fileName}`);
+        missingProfessions.push(professionName);
+        continue;
+      }
+      
+      let professionData;
+      try {
+        professionData = JSON.parse(rawData);
+      } catch (parseError) {
+        log.error(`❌ Invalid JSON in ${fileName}: ${parseError.message}`);
+        log.error(`   File content preview: ${rawData.substring(0, 100)}...`);
+        missingProfessions.push(professionName);
+        continue;
+      }
 
       // Validate the data structure
       if (!professionData.items && !professionData.enchants && !professionData.recipes && !professionData.crafts) {
-        log.warn(`⚠️ Invalid profession file structure: ${file} (missing 'items' key)`);
+        log.warn(`⚠️ Invalid profession file structure: ${fileName} (missing 'items' key)`);
+        missingProfessions.push(professionName);
         continue;
       }
 
@@ -106,7 +138,7 @@ function loadProfessions() {
         itemCount,
         slotCount: slots.length,
         loadedAt: new Date().toISOString(),
-        filePath: file
+        filePath: fileName
       };
 
       totalRecipes += itemCount;
@@ -115,14 +147,23 @@ function loadProfessions() {
       log.info(`  ✅ ${professionName}: ${itemCount} items across ${slots.length} slots`);
 
     } catch (error) {
-      log.error(`❌ Failed to load profession file: ${file}`, error);
+      log.error(`❌ Failed to load profession file: ${fileName}`, error);
+      missingProfessions.push(professionName);
     }
   }
 
-  log.info(`✨ Profession data loaded: ${totalProfessions} professions, ${totalRecipes} total items`);
+  // Log summary
+  if (missingProfessions.length > 0) {
+    log.warn(`⚠️ Missing profession files: ${missingProfessions.join(', ')}`);
+    log.warn(`   Create these files in config/ directory with proper JSON structure`);
+  }
+
+  log.info(`✨ Profession data loaded: ${totalProfessions}/${enabledProfessions.length} professions, ${totalRecipes} total items`);
 
   return {
     professionsLoaded: totalProfessions,
+    professionsEnabled: enabledProfessions.length,
+    missingProfessions: missingProfessions,
     totalItems: totalRecipes,
     professions: Object.keys(professionCache)
   };
