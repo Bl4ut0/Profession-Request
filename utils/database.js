@@ -50,6 +50,8 @@ function initDatabase() {
       materials_json TEXT,
       provided_materials_json TEXT,
       provides_materials INTEGER,
+      quantity_requested INTEGER DEFAULT 1,
+      quantity_completed INTEGER DEFAULT 0,
       audit_log TEXT,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT DEFAULT CURRENT_TIMESTAMP
@@ -95,6 +97,8 @@ function initDatabase() {
       }
       
       const hasProvidedMaterialsJson = rows.some(row => row.name === 'provided_materials_json');
+      const hasQuantityRequested = rows.some(row => row.name === 'quantity_requested');
+      const hasQuantityCompleted = rows.some(row => row.name === 'quantity_completed');
       const hasClaimedAt = rows.some(row => row.name === 'claimed_at');
       const hasAuditLog = rows.some(row => row.name === 'audit_log');
       
@@ -124,6 +128,26 @@ function initDatabase() {
             log.error('[DATABASE] Failed to add audit_log column:', err);
           } else {
             log.info('[DATABASE] Added audit_log column to requests table');
+          }
+        });
+      }
+      
+      if (!hasQuantityRequested) {
+        db.run(`ALTER TABLE requests ADD COLUMN quantity_requested INTEGER DEFAULT 1`, (err) => {
+          if (err) {
+            log.error('[DATABASE] Failed to add quantity_requested column:', err);
+          } else {
+            log.info('[DATABASE] Added quantity_requested column to requests table');
+          }
+        });
+      }
+
+      if (!hasQuantityCompleted) {
+        db.run(`ALTER TABLE requests ADD COLUMN quantity_completed INTEGER DEFAULT 0`, (err) => {
+          if (err) {
+            log.error('[DATABASE] Failed to add quantity_completed column:', err);
+          } else {
+            log.info('[DATABASE] Added quantity_completed column to requests table');
           }
         });
       }
@@ -478,7 +502,7 @@ async function checkDuplicateRequest(userId, character, profession, gear_slot, r
 }
 
 // Add a new request (using generic request_id & request_name)
-function addRequest({ user_id, character, profession, gear_slot, request_id, request_name, materials_json, provided_materials_json, provides_materials }) {
+function addRequest({ user_id, character, profession, gear_slot, request_id, request_name, materials_json, provided_materials_json, provides_materials, quantity_requested = 1, quantity_completed = 0 }) {
   // Validate required fields
   if (!user_id || !character || !profession || !gear_slot || !request_id || !request_name) {
     log.error('[DB] addRequest: Missing required fields', {
@@ -501,9 +525,9 @@ function addRequest({ user_id, character, profession, gear_slot, request_id, req
   
   return run(
     `INSERT INTO requests
-       (user_id, character, profession, gear_slot, request_id, request_name, materials_json, provided_materials_json, provides_materials, audit_log, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [user_id, character, profession, gear_slot, request_id, request_name, materials_json, provided_materials_json || '{}', provides_materials, initialAuditLog, ts, ts]
+       (user_id, character, profession, gear_slot, request_id, request_name, materials_json, provided_materials_json, provides_materials, quantity_requested, quantity_completed, audit_log, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [user_id, character, profession, gear_slot, request_id, request_name, materials_json, provided_materials_json || '{}', provides_materials, quantity_requested, quantity_completed, initialAuditLog, ts, ts]
   );
 }
 
@@ -639,17 +663,56 @@ async function releaseRequest(requestId, userId) {
  * @param {string} userId - The crafter completing the request
  */
 async function completeRequest(requestId, userId) {
-  const timestamp = new Date().toISOString();
-  
-  await run(
-    `UPDATE requests
-       SET status = 'complete', updated_at = ?
-     WHERE id = ?`,
-    [timestamp, requestId]
-  );
+  // Deprecated single-complete signature maintained for backwards compatibility
+  return completeRequestWithQuantity(requestId, userId, null);
+}
 
-  await appendAuditLog(requestId, 'completed', userId);
-  log.info(`[DB] Request ${requestId} marked complete by user ${userId}`);
+/**
+ * Completes a request, supporting partial quantity completions.
+ * If `completedQty` is null, the request is treated as fully completed.
+ */
+async function completeRequestWithQuantity(requestId, userId, completedQty = null) {
+  try {
+    const timestamp = new Date().toISOString();
+
+    const req = await get('SELECT quantity_requested, quantity_completed FROM requests WHERE id = ?', [requestId]);
+    if (!req) throw new Error(`Request ${requestId} not found`);
+
+    const qtyRequested = parseInt(req.quantity_requested || 1, 10);
+    const currentCompleted = parseInt(req.quantity_completed || 0, 10);
+
+    if (completedQty === null) {
+      // Full completion
+      await run(
+        `UPDATE requests
+           SET status = 'complete', quantity_completed = ?, updated_at = ?
+         WHERE id = ?`,
+        [qtyRequested, timestamp, requestId]
+      );
+
+      await appendAuditLog(requestId, 'completed', userId, { completed: qtyRequested, totalCompleted: qtyRequested });
+      log.info(`[DB] Request ${requestId} marked complete by user ${userId} (full)`);
+      return;
+    }
+
+    // Partial completion requested
+    const add = parseInt(completedQty || 0, 10);
+    const newCompleted = Math.min(qtyRequested, currentCompleted + add);
+    const newStatus = newCompleted >= qtyRequested ? 'complete' : 'in_progress';
+
+    await run(
+      `UPDATE requests
+         SET quantity_completed = ?, status = ?, updated_at = ?
+       WHERE id = ?`,
+      [newCompleted, newStatus, timestamp, requestId]
+    );
+
+    await appendAuditLog(requestId, 'partial_completed', userId, { added: add, totalCompleted: newCompleted });
+    log.info(`[DB] Request ${requestId} partial complete by ${userId}: +${add} (now ${newCompleted}/${qtyRequested})`);
+  } catch (err) {
+    log.error('[DB] Error completing request with quantity:', err);
+    throw err;
+  }
 }
 
 /**
@@ -886,6 +949,7 @@ module.exports = {
   claimRequest,
   releaseRequest,
   completeRequest,
+  completeRequestWithQuantity,
   getOpenRequestsByProfession,
   getInProgressRequestsByUser,
   getRequestsByCharacterName,

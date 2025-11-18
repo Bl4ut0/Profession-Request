@@ -67,12 +67,26 @@ The bot uses the following npm packages (automatically installed with `npm insta
 
 4. **Set up environment**
    - Create a `.env` file in the root directory
-   - Add your bot token:
+   - Add these variables (required):
      ```env
-     DISCORD_BOT_TOKEN=your_bot_token_here
+     # Discord application/bot
+     DISCORD_TOKEN=your_bot_token_here
+     CLIENT_ID=your_application_id_here   # Application (client) ID from Developer Portal
+     GUILD_ID=your_guild_id_here          # Server where slash commands will be registered
      ```
 
-5. **Start the bot**
+5. **Configure Discord Developer Portal (required)**
+   - Go to https://discord.com/developers/applications → select your app → Bot
+   - Privileged Gateway Intents (toggle ON):
+     - Server Members Intent (required for role checks and member fetches)
+     - Message Content Intent (required with current intents in code)
+   - OAuth2 → URL Generator:
+     - Scopes: bot, applications.commands
+     - Permissions (minimum for DM mode): View Channels, Send Messages, Embed Links, Read Message History, Manage Messages
+     - Channel mode additionally needs: Manage Channels
+   - Invite the bot using the generated URL
+
+6. **Start the bot**
    ```bash
    node index.js
    ```
@@ -139,6 +153,8 @@ https://discord.com/api/oauth2/authorize?client_id=YOUR_BOT_CLIENT_ID&permission
 
 Replace `YOUR_BOT_CLIENT_ID` with your bot's application ID from the Discord Developer Portal.
 
+Note: You can also use the OAuth2 URL Generator in the Developer Portal. Ensure both scopes (bot and applications.commands) are selected and the permissions above match your chosen mode (DM vs Channel).
+
 ---
 
 ## 🔐 Permission System
@@ -194,8 +210,16 @@ For detailed format guidelines, see the developer documentation.
 
 ### Bot won't start
 - Check `.env` file has valid bot token
+- Ensure `.env` also includes CLIENT_ID and GUILD_ID
 - Verify all required Discord IDs in `config/config.js`
 - Ensure role IDs are strings (e.g., `"1234567890"` not `1234567890`)
+
+### Error: "Used disallowed intents"
+- Enable privileged intents in the Developer Portal → Bot → Privileged Gateway Intents:
+  - Server Members Intent
+  - Message Content Intent
+- Save changes, wait up to a minute, and restart the bot.
+  - Alternatively, remove `GatewayIntentBits.MessageContent` from `index.js` if you prefer not to enable Message Content Intent.
 
 ### Commands not showing in Discord
 - Ensure bot has `applications.commands` scope

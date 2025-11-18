@@ -43,6 +43,73 @@ function requestHeader(interaction, title, description) {
 }
 
 /**
+ * Safely update an interaction. If the interaction has expired (10062),
+ * fall back to editing the flow message in-channel or sending a new message.
+ */
+async function safeUpdate(interaction, payload, opts = {}) {
+  try {
+    // If a specific flow message id is provided, try to edit it directly first
+    if (opts.flowMessageId) {
+      try {
+        const channel = interaction.channel;
+        const target = await channel.messages.fetch(opts.flowMessageId).catch(() => null);
+        if (target) {
+          return await target.edit(payload);
+        }
+      } catch (e) {
+        log.warn('safeUpdate: failed editing flowMessageId, falling back:', e.message);
+      }
+    }
+    // Prefer interaction.update when possible
+    if (!interaction.deferred && !interaction.replied) {
+      return await interaction.update(payload);
+    }
+
+    // If already deferred or replied, try editReply
+    if (interaction.editReply) {
+      try {
+        return await interaction.editReply(payload);
+      } catch (err) {
+        // Fall through to channel edit/send
+      }
+    }
+  } catch (err) {
+    if (err && err.code === 10062) {
+      log.debug('Interaction expired, falling back to channel edit/send');
+      // Fall through to channel edit/send
+    } else {
+      throw err;
+    }
+  }
+
+  // Fallback: edit the most recent flow message (by embed title), or send a new message
+  try {
+    const channel = interaction.channel;
+    const messages = await channel.messages.fetch({ limit: config.recentMessageSearchLimit });
+    const embedTitle = payload.embeds && payload.embeds[0] && payload.embeds[0].title ? payload.embeds[0].title : null;
+    let flowMessage = null;
+    if (embedTitle) {
+      // Prefer a message with matching title AND embed author matching the user
+      flowMessage = messages.find(msg => msg.embeds && msg.embeds.length > 0 && msg.embeds[0].title === embedTitle && msg.embeds[0].author && msg.embeds[0].author.name === interaction.user.username);
+      if (!flowMessage) {
+        // Fallback to any message with the same title
+        flowMessage = messages.find(msg => msg.embeds && msg.embeds.length > 0 && msg.embeds[0].title === embedTitle);
+      }
+    }
+    if (!flowMessage) {
+      // Fallback to first message with any embed
+      flowMessage = messages.find(msg => msg.embeds && msg.embeds.length > 0);
+    }
+    if (flowMessage) {
+      return await flowMessage.edit(payload);
+    }
+    return await channel.send(payload);
+  } catch (sendErr) {
+    log.error('Failed to fallback-edit/send after expired interaction:', sendErr);
+  }
+}
+
+/**
  * Starts the dropdown flow with character selection.
  */
 async function handleRequestFlow(interaction, client) {
@@ -253,7 +320,7 @@ async function handleRequestDropdowns(interaction, client) {
           .addOptions(opts.slice(0, 25))
       );
       const embed = requestHeader(interaction, 'New Request', `What profession is this request for, **${selected}**?`);
-      return interaction.update({
+      return await safeUpdate(interaction, {
         embeds: [embed],
         components: [row]
       });
@@ -268,7 +335,7 @@ async function handleRequestDropdowns(interaction, client) {
       );
       if (!slots.length) {
         const embed = requestHeader(interaction, 'New Request', `⚠️ No gear slots configured for **${profession}**.`);
-        return interaction.update({
+        return await safeUpdate(interaction, {
           embeds: [embed],
           components: []
         });
@@ -284,7 +351,7 @@ async function handleRequestDropdowns(interaction, client) {
           .addOptions(opts.slice(0, 25))
       );
       const embed = requestHeader(interaction, 'New Request', `Which gear slot on **${charName}** for **${profession}**?`);
-      return interaction.update({
+      return await safeUpdate(interaction, {
         embeds: [embed],
         components: [row]
       });
@@ -297,7 +364,7 @@ async function handleRequestDropdowns(interaction, client) {
       
       if (!recipes.length) {
         const embed = requestHeader(interaction, 'New Request', `⚠️ No items for slot **${slot}**.`);
-        return interaction.update({
+        return await safeUpdate(interaction, {
           embeds: [embed],
           components: []
         });
@@ -348,7 +415,7 @@ async function handleRequestDropdowns(interaction, client) {
       }
       
       const embed = requestHeader(interaction, 'New Request', description);
-      return interaction.update({
+      return await safeUpdate(interaction, {
         embeds: [embed],
         components: [row]
       });
@@ -413,7 +480,7 @@ async function handleRequestDropdowns(interaction, client) {
         const description = `✨ Choose an option for **${slot}** on **${charName}**:\n\n📄 Page ${currentPage} of ${totalPages} (${recipes.length} total items)`;
         const embed = requestHeader(interaction, 'New Request', description);
         
-        return interaction.update({
+        return await safeUpdate(interaction, {
           embeds: [embed],
           components: [row]
         });
@@ -425,17 +492,32 @@ async function handleRequestDropdowns(interaction, client) {
       if (!data) {
         log.error(`[REQUEST_FLOW] Session not found for key: ${key}. User: ${userId}`);
         const embed = requestHeader(interaction, 'New Request', '⚠️ Session expired. Please start over.');
-        return interaction.update({
+        return await safeUpdate(interaction, {
           embeds: [embed],
           components: []
         });
       }
+      // Store the flow message id in the session so fallbacks can edit the correct message
+      try {
+        const msgId = interaction.message?.id || null;
+        await storeTempSession(key, userId, { ...data, flowMessageId: msgId });
+        if (msgId) {
+          // Track this message in the cleanup hierarchy as a submenu/flow message (level 4)
+          try {
+            cleanupService.trackMenuMessage(userId, 4, msgId);
+          } catch (trackErr) {
+            log.warn('[REQUEST_FLOW] Failed to track flow message in cleanup service:', trackErr.message);
+          }
+        }
+      } catch (e) {
+        log.warn('[REQUEST_FLOW] Failed to store flowMessageId in session:', e.message);
+      }
       log.debug(`[REQUEST_FLOW] Session data found for key: ${key}`);
-
-      const matList = Object.entries(data.materials)
-        .map(([m, q]) => `• **${m}** — x${q}`)
-        .join('\n');
+      // Ask for quantity before showing materials so materials can be multiplied
+      await showQuantityModal(interaction, key, data);
+      return;
       
+      // (previously the flow would compute per-unit matList and show buttons)
       // Check if user has Core role for guild crafting
       const guild = client.guilds.cache.get(config.guildId);
       const member = guild ? await guild.members.fetch(userId).catch(() => null) : null;
@@ -503,18 +585,176 @@ async function handleRequestDropdowns(interaction, client) {
         embed.setFooter({ text: 'ℹ️ You must provide all required materials to proceed' });
       }
       
-      await interaction.update({
+      await safeUpdate(interaction, {
         embeds: [embed],
         components: [row]
       });
+        }
+      } catch (err) {
+        log.error('Request flow error:', err);
+        try {
+          await interaction.channel.send({ content: 'An error occurred.' });
+        } catch {}
+      }
+    }
+
+/**
+ * Shows a modal asking for the requested quantity.
+ */
+async function showQuantityModal(interaction, key, data) {
+  const { ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
+
+  const modal = new ModalBuilder()
+    .setCustomId(`quantity_modal_` + key)
+    .setTitle('Requested Quantity');
+
+  const input = new TextInputBuilder()
+    .setCustomId('quantity')
+    .setLabel('Quantity (positive integer)')
+    .setStyle(TextInputStyle.Short)
+    .setPlaceholder('1')
+    .setRequired(true)
+    .setValue('1');
+
+  modal.addComponents(new ActionRowBuilder().addComponents(input));
+
+  await interaction.showModal(modal);
+}
+
+/**
+ * Handles quantity modal submission, stores quantity and renders materials confirmation.
+ */
+async function handleQuantityModal(interaction, client) {
+  const customId = interaction.customId;
+  const key = customId.replace('quantity_modal_', '');
+  const data = await getTempSession(key);
+  if (!data) {
+    return interaction.reply({ content: '⚠️ Session expired. Please start over with `/request`.', flags: MessageFlags.Ephemeral });
+  }
+
+  let qty = 1;
+  try {
+    const value = interaction.fields.getTextInputValue('quantity');
+    const parsed = parseInt(value || '1', 10);
+    qty = isNaN(parsed) || parsed < 1 ? 1 : parsed;
+  } catch (err) {
+    qty = 1;
+  }
+
+  // Update session with selected quantity
+  await storeTempSession(key, interaction.user.id, { ...data, quantity: qty });
+
+  // Re-fetch updated data
+  const updated = await getTempSession(key);
+
+  // Build materials list multiplied by quantity
+  const matList = Object.entries(updated.materials)
+    .map(([m, q]) => `• **${m}** — x${q} each × ${updated.quantity} = x${q * updated.quantity}`)
+    .join('\n');
+
+  const totalItems = Object.values(updated.materials).reduce((sum, qtyPer) => sum + (qtyPer * updated.quantity), 0);
+  const materialCount = Object.keys(updated.materials).length;
+
+  // Check if user has Core role for guild crafting
+  const guild = client.guilds.cache.get(config.guildId);
+  const member = guild ? await guild.members.fetch(interaction.user.id).catch(() => null) : null;
+  const hasCoreRole = member && config.coreRoleId && member.roles.cache.has(config.coreRoleId);
+
+  // Button options for all users
+  const buttons = [
+    new ButtonBuilder()
+      .setCustomId(`provide_mats_full_${key}`)
+      .setLabel('📦 Provide Materials')
+      .setStyle(ButtonStyle.Primary)
+  ];
+  
+  // Core members get additional options
+  if (hasCoreRole) {
+    buttons.push(
+      new ButtonBuilder()
+        .setCustomId(`provide_mats_partial_${key}`)
+        .setLabel('🔷 Partial Guild Craft')
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId(`provide_mats_none_${key}`)
+        .setLabel('🛡️ Full Guild Craft')
+        .setStyle(ButtonStyle.Secondary)
+    );
+  }
+
+  const row = new ActionRowBuilder().addComponents(buttons);
+
+  const enchantMatch = updated.requestName.match(/^Enchant (?:2H )?(.+?) - (.+)$/);
+  const slot = enchantMatch ? enchantMatch[1] : updated.gearSlot;
+  const effect = enchantMatch ? enchantMatch[2] : updated.requestName;
+
+  const embed = requestHeader(interaction, 'New Request', hasCoreRole
+    ? `How would you like to fulfill this request?`
+    : `Confirm your material provision:`)
+    .addFields(
+      {
+        name: '🎯 Gear Slot',
+        value: `**${slot}**`,
+        inline: true
+      },
+      {
+        name: '✨ Enchantment',
+        value: `**${effect}**`,
+        inline: true
+      },
+      {
+        name: '🔢 Quantity',
+        value: `**${updated.quantity}**`,
+        inline: true
+      },
+      {
+        name: '💰 Cost',
+        value: `**${materialCount}** types\n**${totalItems}** total`,
+        inline: true
+      },
+      {
+        name: '📦 Required Materials',
+        value: matList,
+        inline: false
+      }
+    );
+
+  if (hasCoreRole) {
+    embed.setFooter({ text: '🛡️ Core Member: Provide all materials | Share partial guild resources | Get full guild craft' });
+  } else {
+    embed.setFooter({ text: 'ℹ️ You must provide all required materials to proceed' });
+  }
+
+  await interaction.deferUpdate();
+  const channel = interaction.channel;
+  try {
+    // Try to edit the exact flow message if we stored its id in session
+    const flowMessageId = updated?.flowMessageId || null;
+    if (flowMessageId) {
+      try {
+        const target = await channel.messages.fetch(flowMessageId).catch(() => null);
+        if (target) {
+          await target.edit({ embeds: [embed], components: [row] });
+          return;
+        }
+      } catch (e) {
+        log.warn('[REQUEST_FLOW] Failed to edit stored flowMessageId:', e.message);
+      }
+    }
+
+    // Fallback: search recent messages for the flow message by embed title
+    const messages = await channel.messages.fetch({ limit: config.recentMessageSearchLimit });
+    const flowMessage = messages.find(msg => msg.embeds.length > 0 && msg.embeds[0].title === 'New Request');
+    if (flowMessage) {
+      await flowMessage.edit({ embeds: [embed], components: [row] });
+    } else {
+      await channel.send({ embeds: [embed], components: [row] });
     }
   } catch (err) {
-    log.error('Request flow error:', err);
-    try {
-      await interaction.channel.send({ content: 'An error occurred.' });
-    } catch {}
+    await channel.send({ embeds: [embed], components: [row] }).catch(() => {});
   }
 }
+
 
 async function finalizeRequest(interaction, client, providedMaterialsObj) {
     // Handle both button interactions (has customId) and modal submissions
@@ -530,15 +770,16 @@ async function finalizeRequest(interaction, client, providedMaterialsObj) {
         
         // Handle both interaction types
         if (interaction.isModalSubmit()) {
-            return interaction.reply({
-                embeds: [embed],
-                flags: MessageFlags.Ephemeral
-            });
+          return interaction.reply({
+            embeds: [embed],
+            flags: MessageFlags.Ephemeral
+          });
         } else {
-            return interaction.update({
-                embeds: [embed],
-                components: []
-            });
+          // Pass flowMessageId to target the correct message
+          return await safeUpdate(interaction, {
+            embeds: [embed],
+            components: []
+          }, { flowMessageId: data?.flowMessageId || null });
         }
     }
     log.debug(`[REQUEST_FLOW] Session data found for finalization. Key: ${key}`);
@@ -557,17 +798,17 @@ async function finalizeRequest(interaction, client, providedMaterialsObj) {
       log.warn(`[REQUEST_FLOW] Duplicate request detected for user ${interaction.user.id}`);
       const embed = requestHeader(interaction, 'Duplicate Request', '⚠️ You just submitted this request. Please wait a moment before submitting again.');
       
-      if (interaction.isModalSubmit()) {
+        if (interaction.isModalSubmit()) {
           return interaction.reply({
-              embeds: [embed],
-              flags: MessageFlags.Ephemeral
+            embeds: [embed],
+            flags: MessageFlags.Ephemeral
           });
-      } else {
-          return interaction.update({
-              embeds: [embed],
-              components: []
+        } else {
+          return await safeUpdate(interaction, {
+            embeds: [embed],
+            components: []
           });
-      }
+        }
     }
 
     // Determine if providing any materials
@@ -584,22 +825,26 @@ async function finalizeRequest(interaction, client, providedMaterialsObj) {
         materials_json: JSON.stringify(data.materials),
         provided_materials_json: JSON.stringify(providedMaterialsObj),
         provides_materials: hasProvidedMaterials ? 1 : 0,
+      quantity_requested: data.quantity || 1,
+      quantity_completed: 0,
     });
     
     await db.logAction(interaction.user.id, 'createRequest', null, {
         character: data.character,
         item: data.requestName,
         slot: data.gearSlot,
-        provides_materials: hasProvidedMaterials,
+      provides_materials: hasProvidedMaterials,
+      quantity: data.quantity || 1,
     });
 
     // Build detailed materials status
     const providedList = [];
     const neededList = [];
     
-    for (const [material, required] of Object.entries(data.materials)) {
-        const provided = providedMaterialsObj[material] || 0;
-        const needed = required - provided;
+    for (const [material, perUnitRequired] of Object.entries(data.materials)) {
+      const qtyNeededTotal = (perUnitRequired || 0) * (data.quantity || 1);
+      const provided = providedMaterialsObj[material] || 0;
+      const needed = Math.max(0, qtyNeededTotal - provided);
         
         if (provided > 0) {
             providedList.push(`${material} x${provided}`);
@@ -646,10 +891,20 @@ async function finalizeRequest(interaction, client, providedMaterialsObj) {
             });
         }
     } else {
-        await interaction.update({
-            embeds: [embed],
-            components: []
+      // Try to look up flowMessageId from session to target the exact message
+      try {
+        const session = await getTempSession(key);
+        const flowMessageId = session?.flowMessageId || null;
+        return await safeUpdate(interaction, {
+          embeds: [embed],
+          components: []
+        }, { flowMessageId });
+      } catch (e) {
+        return await safeUpdate(interaction, {
+          embeds: [embed],
+          components: []
         });
+      }
     }
 
     // ** CLEAR: Flow complete, clear user activity tracking **
@@ -661,7 +916,14 @@ async function finalizeRequest(interaction, client, providedMaterialsObj) {
         cleanupService.scheduleChannelDeletion(interaction.channel, timeout);
     } else if (config.requestMode === 'dm') {
         const timeout = cleanupService.getCleanupTimeout(cleanupService.MessageType.COMPLETION);
-        cleanupService.scheduleDMCleanup(interaction.channel, client, timeout, interaction.user.id);
+      cleanupService.scheduleDMCleanup(
+        interaction.channel,
+        client,
+        timeout,
+        interaction.user.id,
+        'completion',
+        cleanupService.MessageType.COMPLETION
+      );
     }
 }
 
@@ -671,53 +933,58 @@ async function finalizeRequest(interaction, client, providedMaterialsObj) {
 async function handleMaterialsButton(interaction, client) {
     const customId = interaction.customId;
     
-    // If user needs all materials (providing none)
+    // FULL GUILD CRAFT: User provides nothing, guild handles everything
     if (customId.startsWith('provide_mats_none')) {
         await finalizeRequest(interaction, client, {});
         return;
     }
     
-    // If user wants to provide materials
-    if (customId.startsWith('provide_mats_some')) {
+    // PROVIDE ALL MATERIALS: Auto-fill with full required amounts (Core OR non-Core)
+    if (customId.startsWith('provide_mats_full')) {
         const key = customId.split('_').slice(3).join('_');
         const data = await getTempSession(key);
         
         if (!data) {
             const embed = requestHeader(interaction, 'New Request', '⚠️ Session expired. Please start over.');
-            return interaction.update({
-                embeds: [embed],
-                components: []
+            return await safeUpdate(interaction, {
+              embeds: [embed],
+              components: []
             });
         }
         
-        // Check if user has Core role
-        const userId = interaction.user.id;
-        const guild = client.guilds.cache.get(config.guildId);
-        const member = guild ? await guild.members.fetch(userId).catch(() => null) : null;
-        const hasCoreRole = member && config.coreRoleId && member.roles.cache.has(config.coreRoleId);
-        
-        // NON-CORE USERS: Auto-submit with full materials (no modal)
-        if (!hasCoreRole) {
-            // Build providedMaterials object with all required amounts
-            const providedMaterials = {};
-            for (const [material, required] of Object.entries(data.materials)) {
-                providedMaterials[material] = required;
-            }
-            
-            // Submit request immediately
-            await finalizeRequest(interaction, client, providedMaterials);
-            return;
+        // Build providedMaterials object with all required amounts
+        const providedMaterials = {};
+        const qtyMultiplier = parseInt(data.quantity || 1, 10) || 1;
+        for (const [material, required] of Object.entries(data.materials)) {
+          providedMaterials[material] = (required || 0) * qtyMultiplier;
         }
         
-        // CORE USERS: Show modal to choose quantities
-        // Store Core permission flag in session for validation
-        await storeTempSession(key, userId, {
+        // Submit request immediately with all materials provided
+        await finalizeRequest(interaction, client, providedMaterials);
+        return;
+    }
+    
+    // PARTIAL GUILD CRAFT: Core member provides some materials (opens modal for quantities)
+    if (customId.startsWith('provide_mats_partial')) {
+        const key = customId.split('_').slice(3).join('_');
+        const data = await getTempSession(key);
+        
+        if (!data) {
+            const embed = requestHeader(interaction, 'New Request', '⚠️ Session expired. Please start over.');
+            return await safeUpdate(interaction, {
+              embeds: [embed],
+              components: []
+            });
+        }
+        
+        // Core member choosing partial guild craft - show modal to pick quantities
+        await storeTempSession(key, interaction.user.id, {
             ...data,
-            hasCoreRole: true
+            partialGuildCraftMode: true
         });
         
         // Show modal for first 5 materials
-        await showMaterialModal(interaction, key, data, 1);
+        await showMaterialModal(interaction, key, data, 1, 'partial');
     }
 }
 
@@ -727,8 +994,9 @@ async function handleMaterialsButton(interaction, client) {
  * @param {string} key - Session key
  * @param {*} data - Session data
  * @param {number} modalNumber - 1 or 2 (for overflow)
+ * @param {string} mode - 'partial' for partial guild craft, undefined for regular
  */
-async function showMaterialModal(interaction, key, data, modalNumber) {
+async function showMaterialModal(interaction, key, data, modalNumber, mode = 'partial') {
     const { ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
     
     const materials = Object.entries(data.materials);
@@ -738,22 +1006,23 @@ async function showMaterialModal(interaction, key, data, modalNumber) {
     
     const modal = new ModalBuilder()
         .setCustomId(`materials_modal_${modalNumber}_${key}`)
-        .setTitle(`Material Quantities (${modalNumber}/${Math.ceil(materials.length / 5)})`);
+        .setTitle(mode === 'partial' 
+          ? `Partial Guild Craft (${modalNumber}/${Math.ceil(materials.length / 5)})`
+          : `Material Quantities (${modalNumber}/${Math.ceil(materials.length / 5)})`);
     
-    // Check if user has Core role (from session)
-    const hasCoreRole = data.hasCoreRole || false;
-    
-    // Add input for each material (max 5)
-    for (const [material, required] of materialsSlice) {
-        const input = new TextInputBuilder()
-            .setCustomId(`mat_${material.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 100)}`)
-            .setLabel(`${material.substring(0, 45)}`)
-            .setStyle(TextInputStyle.Short)
-            .setPlaceholder(hasCoreRole ? `0 to ${required} (optional)` : `Required: ${required}`)
-            .setRequired(!hasCoreRole)  // Required for non-Core users
-            .setValue(hasCoreRole ? '0' : `${required}`);  // Pre-fill required amount for non-Core
-        
-        modal.addComponents(new ActionRowBuilder().addComponents(input));
+    // Add input for each material (max 5). Multiply per-unit required by quantity.
+    const qtyMultiplier = parseInt(data.quantity || 1, 10) || 1;
+    for (const [material, requiredPerUnit] of materialsSlice) {
+      const totalRequired = (requiredPerUnit || 0) * qtyMultiplier;
+      const input = new TextInputBuilder()
+        .setCustomId(`mat_${material.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 100)}`)
+        .setLabel(`${material.substring(0, 45)}`)
+        .setStyle(TextInputStyle.Short)
+        .setPlaceholder(mode === 'partial' ? `0 to ${totalRequired} (optional)` : `Required: ${totalRequired}`)
+        .setRequired(mode !== 'partial')  // Required for regular (auto-fill), optional for partial
+        .setValue(mode === 'partial' ? '0' : `${totalRequired}`);  // Pre-fill for regular mode
+
+      modal.addComponents(new ActionRowBuilder().addComponents(input));
     }
     
     await interaction.showModal(modal);
@@ -784,31 +1053,26 @@ async function handleMaterialsModal(interaction, client) {
     
     // Extract quantities from this modal
     const providedMaterials = data.providedMaterials || {};
-    const hasCoreRole = data.hasCoreRole || false;
-    
-    // Validate material quantities
-    for (const [material, required] of materialsSlice) {
-        const fieldId = `mat_${material.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 100)}`;
-        try {
-            const valueStr = interaction.fields.getTextInputValue(fieldId) || '0';
-            const value = parseInt(valueStr);
-            
-            // Non-Core users MUST provide exactly the required amount
-            if (!hasCoreRole && value !== required) {
-                return interaction.reply({
-                    content: `❌ You must provide exactly **${required}** ${material}. Please try again.`,
-                    flags: MessageFlags.Ephemeral
-                });
-            }
-            
-            // Core users can provide 0 to required amount
-            const clamped = Math.min(Math.max(0, isNaN(value) ? 0 : value), required);
-            providedMaterials[material] = clamped;
-        } catch (err) {
-            log.warn(`[MATERIALS_MODAL] Failed to get value for ${fieldId}: ${err.message}`);
-            // Non-Core users must provide required amount even on error
-            providedMaterials[material] = hasCoreRole ? 0 : required;
+    const isPartialMode = data.partialGuildCraftMode || false;
+    const qtyMultiplier = parseInt(data.quantity || 1, 10) || 1;
+
+    // Validate material quantities (compare against total required = per-unit * quantity)
+    for (const [material, requiredPerUnit] of materialsSlice) {
+      const totalRequired = (requiredPerUnit || 0) * qtyMultiplier;
+      const fieldId = `mat_${material.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 100)}`;
+      try {
+        const valueStr = interaction.fields.getTextInputValue(fieldId) || '0';
+        const value = parseInt(valueStr);
+
+        // Partial guild craft mode: user can provide 0 to totalRequired
+        if (isPartialMode) {
+          const clamped = Math.min(Math.max(0, isNaN(value) ? 0 : value), totalRequired);
+          providedMaterials[material] = clamped;
         }
+      } catch (err) {
+        log.warn(`[MATERIALS_MODAL] Failed to get value for ${fieldId}: ${err.message}`);
+        providedMaterials[material] = hasCoreRole ? 0 : totalRequired;
+      }
     }
     
     // Update session with partial data
@@ -835,5 +1099,6 @@ module.exports = {
   handleRequestDropdowns,
   handleMaterialsButton,
   handleMaterialsModal,
+  handleQuantityModal,
 };
 

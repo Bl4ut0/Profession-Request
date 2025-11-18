@@ -70,11 +70,6 @@ async function handleInteractions(interaction, client) {
 
   log.debug(`[INTERACT] type=${type} id=${id} user=${user}`);
 
-  // Record user activity on EVERY interaction to reset cleanup timer
-  if (interaction.user) {
-    recordUserActivity(interaction.user.id);
-  }
-
   try {
     if (interaction.isStringSelectMenu()) {
       if (interaction.customId.startsWith('char_')) {
@@ -160,7 +155,7 @@ async function handleInteractions(interaction, client) {
             await handleSwitchToAdmin(interaction, client);
             break;
           case 'manage_crafts:admin_summary':
-            await handleAdminSummary(interaction, client);
+            await handleAdminSummary(interaction, client, 0);
             break;
           case 'manage_crafts:admin_by_profession':
             await handleAdminByProfession(interaction, client);
@@ -181,13 +176,17 @@ async function handleInteractions(interaction, client) {
             await handleBackToAdminMenu(interaction, client);
             break;
           default:
+            // Handle pagination for admin summary
+            if (interaction.customId.startsWith('manage_crafts:admin_summary_page_')) {
+              await handleAdminSummaryPage(interaction, client);
+              break;
+            }
             // Handle pagination buttons for audit log
             if (interaction.customId.startsWith('manage_crafts:audit_page_')) {
               const page = parseInt(interaction.customId.replace('manage_crafts:audit_page_', ''));
               await handleAdminAuditPage(interaction, client, page);
               break;
             }
-            
             // Handle pagination buttons for audit search results
             if (interaction.customId.startsWith('manage_crafts:audit_search_page_')) {
               const remainder = interaction.customId.replace('manage_crafts:audit_search_page_', '');
@@ -197,13 +196,17 @@ async function handleInteractions(interaction, client) {
               await handleAdminAuditSearchPage(interaction, client, characterName, page);
               break;
             }
-            
             // Handle pagination buttons for admin profession queue
             if (interaction.customId.startsWith('manage_crafts:admin_prof_page_')) {
               const parts = interaction.customId.replace('manage_crafts:admin_prof_page_', '').split('_');
               const page = parseInt(parts.pop());
               const profession = parts.join('_');
               await handleAdminProfessionPage(interaction, client, profession, page);
+              break;
+            }
+            // Handle pagination for crafter queue
+            if (interaction.customId.startsWith('manage_crafts:admin_crafter_page_')) {
+              await handleAdminCrafterPage(interaction, client);
               break;
             }
             
@@ -276,7 +279,15 @@ async function handleInteractions(interaction, client) {
         if (interaction.customId.startsWith('char_')) {
             await handleCharacterModal(interaction, client);
         } else if (interaction.customId.startsWith('materials_modal_')) {
-            await handleMaterialsModal(interaction, client);
+          await handleMaterialsModal(interaction, client);
+        } else if (interaction.customId.startsWith('quantity_modal_')) {
+          // Quantity modal submission from request flow
+          const { handleQuantityModal } = require('./shared/requestFlow');
+          await handleQuantityModal(interaction, client);
+        } else if (interaction.customId.startsWith('complete_modal_')) {
+          // Completion modal (single/partial complete) handled by manageCraftsFlow
+          const { handleCompleteModal } = require('./shared/manageCraftsFlow');
+          await handleCompleteModal(interaction, client);
         } else if (interaction.customId === 'manage_crafts:admin_lookup_modal') {
             await handleAdminLookupModal(interaction, client);
         } else if (interaction.customId === 'manage_crafts:admin_audit_modal') {

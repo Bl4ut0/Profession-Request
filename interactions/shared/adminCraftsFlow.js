@@ -1,3 +1,105 @@
+// Helper for paginating crafter requests
+function buildCrafterQueuePages(requests, crafterName, pageCharLimit = 1800) {
+  let header = `👤 **Crafter Queue**\n\n**${crafterName}** has **${requests.length}** request(s):\n\n`;
+  let pages = [];
+  let current = header;
+  for (const req of requests) {
+    const indicator = getMaterialIndicator(req);
+    let block = `• **#${req.id}** ${req.character} - ${req.profession.charAt(0).toUpperCase() + req.profession.slice(1)} - ${req.request_name} ${indicator}\n`;
+    if ((current + block).length > pageCharLimit && current !== header) {
+      pages.push(current);
+      current = '';
+    }
+    current += block;
+  }
+  if (current.length > 0) pages.push(current);
+  return pages;
+}
+
+async function handleAdminCrafterDropdown(interaction, client, page = 0) {
+  const selectedValue = interaction.values ? interaction.values[0] : interaction.customId.split(':')[2];
+  const crafterId = selectedValue.replace('crafter_', '');
+  const userId = interaction.user.id;
+  const channel = await resolveResponseChannel(interaction, client);
+
+  // Clean Level 4+ (keep header, admin menu, and dropdown)
+  await cleanupService.cleanupFromLevel(userId, client, 4);
+
+  const requests = await db.getAllRequestsByClaimedUser(crafterId);
+  const inProgress = requests.filter(r => r.status === 'in_progress' || r.status === 'claimed');
+  const crafterName = requests[0]?.claimed_by_name || 'Unknown';
+
+  if (inProgress.length === 0) {
+    let content = `👤 **Crafter Queue**\n\n*This crafter has no in-progress requests.*\n`;
+    const msg = await channel.send({ content });
+    cleanupService.trackMenuMessage(userId, 4, msg.id);
+    if (config.requestMode === 'dm' && channel.type === ChannelType.DM) {
+      const timeout = cleanupService.getCleanupTimeout(cleanupService.MessageType.SUBMENU);
+      cleanupService.scheduleDMCleanup(
+        channel,
+        client,
+        timeout,
+        userId,
+        'submenu',
+        cleanupService.MessageType.SUBMENU
+      );
+    }
+    return interaction.deferUpdate();
+  }
+
+  const pages = buildCrafterQueuePages(inProgress, crafterName);
+  const totalPages = pages.length;
+  const currentPage = Math.max(0, Math.min(page, totalPages - 1));
+
+  // Navigation buttons
+  const components = [];
+  const buttons = [];
+  if (totalPages > 1) {
+    if (currentPage > 0) {
+      buttons.push(
+        new ButtonBuilder()
+          .setCustomId(`manage_crafts:admin_crafter_page_${crafterId}_${currentPage - 1}`)
+          .setLabel('◀️ Previous')
+          .setStyle(ButtonStyle.Primary)
+      );
+    }
+    if (currentPage < totalPages - 1) {
+      buttons.push(
+        new ButtonBuilder()
+          .setCustomId(`manage_crafts:admin_crafter_page_${crafterId}_${currentPage + 1}`)
+          .setLabel('Next ▶️')
+          .setStyle(ButtonStyle.Primary)
+      );
+    }
+    components.push(new ActionRowBuilder().addComponents(buttons));
+  }
+
+  const msg = await channel.send({ content: pages[currentPage], components });
+  cleanupService.trackMenuMessage(userId, 4, msg.id);
+  if (config.requestMode === 'dm' && channel.type === ChannelType.DM) {
+    const timeout = cleanupService.getCleanupTimeout(cleanupService.MessageType.SUBMENU);
+    cleanupService.scheduleDMCleanup(
+      channel,
+      client,
+      timeout,
+      userId,
+      'submenu',
+      cleanupService.MessageType.SUBMENU
+    );
+  }
+  await interaction.deferUpdate();
+}
+
+// Handler for crafter queue pagination
+async function handleAdminCrafterPage(interaction, client) {
+  const match = interaction.customId.match(/manage_crafts:admin_crafter_page_(.+)_(\d+)/);
+  if (!match) return;
+  const crafterId = match[1];
+  const page = parseInt(match[2], 10);
+  // Fake a select interaction for compatibility
+  interaction.values = [`crafter_${crafterId}`];
+  await handleAdminCrafterDropdown(interaction, client, page);
+}
 // interactions/shared/adminCraftsFlow.js
 const { ActionRowBuilder, ButtonBuilder, StringSelectMenuBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, ChannelType } = require('discord.js');
 const db = require('../../utils/database');
@@ -17,14 +119,19 @@ function getMaterialIndicator(request) {
   
   try {
     const providedMats = request.provided_materials_json ? JSON.parse(request.provided_materials_json) : {};
-    const requiredMats = request.materials_json ? JSON.parse(request.materials_json) : {};
+    const requiredPerUnit = request.materials_json ? JSON.parse(request.materials_json) : {};
+    const qtyRequested = parseInt(request.quantity_requested || request.quantity || 1, 10);
+    const requiredMats = {};
+    for (const [mat, perQty] of Object.entries(requiredPerUnit)) {
+      requiredMats[mat] = (parseInt(perQty, 10) || 0) * qtyRequested;
+    }
     
     const providedValues = Object.values(providedMats);
     const hasAnyProvided = providedValues.some(qty => qty > 0);
     
     if (hasAnyProvided) {
       // Check if partial or full provision
-      const allFull = Object.entries(requiredMats).every(([mat, req]) => providedMats[mat] >= req);
+      const allFull = Object.entries(requiredMats).every(([mat, req]) => (providedMats[mat] || 0) >= req);
       
       if (allFull) {
         return '📦';  // Full materials provided
@@ -42,75 +149,118 @@ function getMaterialIndicator(request) {
 /**
  * Admin Summary - Shows overview of all professions
  */
-async function handleAdminSummary(interaction, client) {
+
+// Helper to build the summary string array (pages)
+function buildProfessionSummaryPages(byProfession, pageCharLimit = 1800) {
+  let header = '📊 **Profession Summary**\n\nOverview of all enabled professions:\n\n';
+  let pages = [];
+  let current = header;
+  for (const [profession, data] of Object.entries(byProfession)) {
+    const professionName = profession.charAt(0).toUpperCase() + profession.slice(1);
+    const totalClaimed = Object.values(data.in_progress).reduce((sum, count) => sum + count, 0);
+    const totalRequests = data.open + totalClaimed;
+    const statusEmoji = totalRequests === 0 ? '✅' : data.open > 0 ? '⏳' : '⚙️';
+    let block = `${statusEmoji} **${professionName}** (${totalRequests} total)\n`;
+    block += `  Open: ${data.open} request(s)\n`;
+    if (Object.keys(data.in_progress).length > 0) {
+      block += `  Claimed:\n`;
+      for (const [crafter, count] of Object.entries(data.in_progress)) {
+        block += `    • ${crafter}: ${count} request(s)\n`;
+      }
+    } else {
+      block += `  Claimed: 0 request(s)\n`;
+    }
+    block += '\n';
+    if ((current + block).length > pageCharLimit && current !== header) {
+      pages.push(current);
+      current = '';
+    }
+    current += block;
+  }
+  if (current.length > 0) pages.push(current);
+  return pages;
+}
+
+async function handleAdminSummary(interaction, client, page = 0) {
   const userId = interaction.user.id;
   const channel = await resolveResponseChannel(interaction, client);
-  
+
   // Clean Level 3+ (keep header and admin menu)
   await cleanupService.cleanupFromLevel(userId, client, 3);
   cleanupService.trackUserChannel(userId, channel.id);
 
   const summary = await db.getRequestSummary();
 
-  let content = '📊 **Profession Summary**\n\n';
-  content += 'Overview of all enabled professions:\n\n';
-
   // Initialize all enabled professions with 0 counts
   const byProfession = {};
   for (const prof of config.enabledProfessions) {
     byProfession[prof] = { open: 0, in_progress: {}, complete: 0 };
   }
-  
   // Fill in actual data from database
   for (const row of summary) {
     if (!byProfession[row.profession]) {
       byProfession[row.profession] = { open: 0, in_progress: {}, complete: 0 };
     }
-    
     if (row.status === 'open') {
       byProfession[row.profession].open += row.count;
     } else if (row.status === 'in_progress') {
       const crafterName = row.claimed_by_name || 'Unknown';
-      byProfession[row.profession].in_progress[crafterName] = 
+      byProfession[row.profession].in_progress[crafterName] =
         (byProfession[row.profession].in_progress[crafterName] || 0) + row.count;
     }
   }
 
-  // Display all professions (enabled ones will always show, even if 0 requests)
-  for (const [profession, data] of Object.entries(byProfession)) {
-    const professionName = profession.charAt(0).toUpperCase() + profession.slice(1);
-    const totalClaimed = Object.values(data.in_progress).reduce((sum, count) => sum + count, 0);
-    const totalRequests = data.open + totalClaimed;
-    
-    // Use emoji to indicate status
-    const statusEmoji = totalRequests === 0 ? '✅' : data.open > 0 ? '⏳' : '⚙️';
-    
-    content += `${statusEmoji} **${professionName}** (${totalRequests} total)\n`;
-    content += `  Open: ${data.open} request(s)\n`;
-    
-    if (Object.keys(data.in_progress).length > 0) {
-      content += `  Claimed:\n`;
-      for (const [crafter, count] of Object.entries(data.in_progress)) {
-        content += `    • ${crafter}: ${count} request(s)\n`;
-      }
-    } else {
-      content += `  Claimed: 0 request(s)\n`;
+  const pages = buildProfessionSummaryPages(byProfession);
+  const totalPages = pages.length;
+  const currentPage = Math.max(0, Math.min(page, totalPages - 1));
+
+  // Navigation buttons
+  const components = [];
+  const buttons = [];
+  if (totalPages > 1) {
+    if (currentPage > 0) {
+      buttons.push(
+        new ButtonBuilder()
+          .setCustomId(`manage_crafts:admin_summary_page_${currentPage - 1}`)
+          .setLabel('◀️ Previous')
+          .setStyle(ButtonStyle.Primary)
+      );
     }
-    content += '\n';
+    if (currentPage < totalPages - 1) {
+      buttons.push(
+        new ButtonBuilder()
+          .setCustomId(`manage_crafts:admin_summary_page_${currentPage + 1}`)
+          .setLabel('Next ▶️')
+          .setStyle(ButtonStyle.Primary)
+      );
+    }
+    components.push(new ActionRowBuilder().addComponents(buttons));
   }
 
-  const msg = await channel.send({ content });
-  
-  // Track at Level 3 (submenu display)
+  const msg = await channel.send({ content: pages[currentPage], components });
   cleanupService.trackMenuMessage(userId, 3, msg.id);
-  
+
   // Schedule cleanup if user becomes inactive (SUBMENU = viewing summary)
   if (config.requestMode === 'dm' && channel.type === ChannelType.DM) {
     const timeout = cleanupService.getCleanupTimeout(cleanupService.MessageType.SUBMENU);
-    cleanupService.scheduleDMCleanup(channel, client, timeout, userId);
+    cleanupService.scheduleDMCleanup(
+      channel,
+      client,
+      timeout,
+      userId,
+      'submenu',
+      cleanupService.MessageType.SUBMENU
+    );
   }
-  
+
   await interaction.deferUpdate();
+}
+
+// Handler for summary pagination
+async function handleAdminSummaryPage(interaction, client) {
+  const pageMatch = interaction.customId.match(/manage_crafts:admin_summary_page_(\d+)/);
+  const page = pageMatch ? parseInt(pageMatch[1], 10) : 0;
+  await handleAdminSummary(interaction, client, page);
 }
 
 /**
@@ -148,7 +298,14 @@ async function handleAdminByProfession(interaction, client) {
   // Schedule cleanup if user becomes inactive (SUBMENU = dropdown selection)
   if (config.requestMode === 'dm' && channel.type === ChannelType.DM) {
     const timeout = cleanupService.getCleanupTimeout(cleanupService.MessageType.SUBMENU);
-    cleanupService.scheduleDMCleanup(channel, client, timeout, userId);
+    cleanupService.scheduleDMCleanup(
+      channel,
+      client,
+      timeout,
+      userId,
+      'submenu',
+      cleanupService.MessageType.SUBMENU
+    );
   }
 
   await interaction.deferUpdate();
@@ -211,7 +368,8 @@ async function showAdminProfessionQueue(interaction, client, profession, page = 
       content += `**⏳ OPEN (${byStatus.open.length}):**\n`;
       for (const req of byStatus.open) {
         const indicator = getMaterialIndicator(req);
-        content += `#${req.id} | ${req.character} | ${req.request_name} ${indicator}\n`;
+          const qty = req.quantity_requested || req.quantity || 1;
+          content += `#${req.id} | ${req.character} | ${req.request_name} x${qty} ${indicator}\n`;
       }
       content += `\n`;
     }
@@ -222,7 +380,8 @@ async function showAdminProfessionQueue(interaction, client, profession, page = 
       for (const req of byStatus.claimed) {
         const claimedBy = req.claimed_by_name || 'Unknown';
         const indicator = getMaterialIndicator(req);
-        content += `#${req.id} | ${req.character} | ${req.request_name} | By: ${claimedBy} ${indicator}\n`;
+          const qty = req.quantity_requested || req.quantity || 1;
+          content += `#${req.id} | ${req.character} | ${req.request_name} x${qty} | By: ${claimedBy} ${indicator}\n`;
       }
       content += `\n`;
     }
@@ -233,7 +392,8 @@ async function showAdminProfessionQueue(interaction, client, profession, page = 
       for (const req of byStatus.in_progress) {
         const claimedBy = req.claimed_by_name || 'Unknown';
         const indicator = getMaterialIndicator(req);
-        content += `#${req.id} | ${req.character} | ${req.request_name} | By: ${claimedBy} ${indicator}\n`;
+          const qty = req.quantity_requested || req.quantity || 1;
+          content += `#${req.id} | ${req.character} | ${req.request_name} x${qty} | By: ${claimedBy} ${indicator}\n`;
       }
       content += `\n`;
     }
@@ -274,7 +434,14 @@ async function showAdminProfessionQueue(interaction, client, profession, page = 
   // Schedule cleanup if user becomes inactive (SUBMENU = viewing profession queue)
   if (config.requestMode === 'dm' && channel.type === ChannelType.DM) {
     const timeout = cleanupService.getCleanupTimeout(cleanupService.MessageType.SUBMENU);
-    cleanupService.scheduleDMCleanup(channel, client, timeout, userId);
+    cleanupService.scheduleDMCleanup(
+      channel,
+      client,
+      timeout,
+      userId,
+      'submenu',
+      cleanupService.MessageType.SUBMENU
+    );
   }
   
   await interaction.deferUpdate();
@@ -296,36 +463,37 @@ async function handleAdminByCrafter(interaction, client) {
   if (crafters.length === 0) {
     const content = '❌ No crafters currently have claimed or completed requests.';
     const msg = await channel.send({ content });
-    
-    // Track at Level 3
     cleanupService.trackMenuMessage(userId, 3, msg.id);
-    
-    // Schedule cleanup if user becomes inactive (SUBMENU = empty message)
     if (config.requestMode === 'dm' && channel.type === ChannelType.DM) {
       const timeout = cleanupService.getCleanupTimeout(cleanupService.MessageType.SUBMENU);
-      cleanupService.scheduleDMCleanup(channel, client, timeout, userId);
+      cleanupService.scheduleDMCleanup(
+        channel,
+        client,
+        timeout,
+        userId,
+        'submenu',
+        cleanupService.MessageType.SUBMENU
+      );
     }
-    
     return interaction.deferUpdate();
   }
 
+  // Sort crafters by last_activity descending
+  const sortedCrafters = crafters.slice().sort((a, b) => new Date(b.last_activity) - new Date(a.last_activity));
+  const recentCrafters = sortedCrafters.slice(0, 5);
+
   // Get guild to check member roles
   const guild = client.guilds.cache.get(config.guildId);
-  
-  let content = `👤 **View by Crafter**\n\n`;
-  content += `Showing crafters ordered by most recent activity:\n\n`;
 
-  // Build crafter list with professions and permissions
-  const options = [];
-  for (const crafter of crafters) {
+  let content = `👤 **View by Crafter**\n\n`;
+  content += `Showing 5 most recent crafters by activity:\n\n`;
+
+  // Show only the 5 most recent crafters in the main section
+  for (const crafter of recentCrafters) {
     const member = guild ? await guild.members.fetch(crafter.claimed_by).catch(() => null) : null;
-    
-    // Format professions list
     const professionsList = crafter.professions
       .map(p => p.charAt(0).toUpperCase() + p.slice(1))
       .join(', ');
-    
-    // Check permissions
     const permissions = [];
     if (member) {
       if (config.roles.admin && member.roles.cache.has(config.roles.admin)) {
@@ -337,20 +505,19 @@ async function handleAdminByCrafter(interaction, client) {
         }
       }
     }
-    
     const permissionStr = permissions.length > 0 ? ` [${permissions.join(', ')}]` : '';
     const lastActivity = new Date(crafter.last_activity).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    
     content += `**${crafter.claimed_by_name}**${permissionStr}\n`;
     content += `└ In Progress: ${crafter.in_progress_count} | Completed: ${crafter.completed_count} | Last: ${lastActivity}\n\n`;
-    
-    options.push({
-      label: crafter.claimed_by_name,
-      value: `crafter_${crafter.claimed_by}`,
-      emoji: '👤',
-      description: `${crafter.in_progress_count} in progress, ${crafter.completed_count} completed`
-    });
   }
+
+  // Dropdown still contains all crafters
+  const options = crafters.map(crafter => ({
+    label: crafter.claimed_by_name,
+    value: `crafter_${crafter.claimed_by}`,
+    emoji: '👤',
+    description: `${crafter.in_progress_count} in progress, ${crafter.completed_count} completed`
+  }));
 
   const dropdown = new StringSelectMenuBuilder()
     .setCustomId('manage_crafts:admin_crafter_dropdown')
@@ -363,17 +530,19 @@ async function handleAdminByCrafter(interaction, client) {
     content,
     components: [row]
   });
-  
-  // Track at Level 3 (submenu dropdown)
   cleanupService.trackMenuMessage(userId, 3, msg.id);
-
-  // Schedule cleanup if user becomes inactive (SUBMENU = dropdown selection)
   if (config.requestMode === 'dm' && channel.type === ChannelType.DM) {
     const timeout = cleanupService.getCleanupTimeout(cleanupService.MessageType.SUBMENU);
-    cleanupService.scheduleDMCleanup(channel, client, timeout, userId);
+    cleanupService.scheduleDMCleanup(
+      channel,
+      client,
+      timeout,
+      userId,
+      'submenu',
+      cleanupService.MessageType.SUBMENU
+    );
   }
-
-  await interaction.deferUpdate();
+  return interaction.deferUpdate();
 }
 
 /**
@@ -437,7 +606,14 @@ async function handleAdminCrafterDropdown(interaction, client) {
   // Schedule cleanup if user becomes inactive (SUBMENU = viewing crafter queue)
   if (config.requestMode === 'dm' && channel.type === ChannelType.DM) {
     const timeout = cleanupService.getCleanupTimeout(cleanupService.MessageType.SUBMENU);
-    cleanupService.scheduleDMCleanup(channel, client, timeout, userId);
+    cleanupService.scheduleDMCleanup(
+      channel,
+      client,
+      timeout,
+      userId,
+      'submenu',
+      cleanupService.MessageType.SUBMENU
+    );
   }
   
   await interaction.deferUpdate();
@@ -513,6 +689,10 @@ async function showRequestDetails(interaction, client, channel, request, include
   content += `**Profession:** ${request.profession}\n`;
   content += `**Gear Slot:** ${request.gear_slot}\n`;
   content += `**Request:** ${request.request_name}\n`;
+  // Quantity info
+  const qtyRequested = parseInt(request.quantity_requested || request.quantity || 1, 10) || 1;
+  const qtyCompleted = parseInt(request.quantity_completed || 0, 10) || 0;
+  content += `**Quantity:** ${qtyRequested} requested, ${qtyCompleted} completed\n`;
   // Show user-friendly status label
   const statusLabel = request.status === 'denied' ? 'Cancelled' : request.status;
   content += `**Status:** ${statusLabel}\n`;
@@ -533,19 +713,27 @@ async function showRequestDetails(interaction, client, channel, request, include
   if (request.materials_json) {
     const materials = JSON.parse(request.materials_json);
     if (Object.keys(materials).length > 0) {
-      content += `**Materials Required:**\n`;
+      content += `**Materials Required (per unit):**\n`;
       for (const [mat, qty] of Object.entries(materials)) {
         content += `  • ${mat} x${qty}\n`;
+      }
+      // Totals for requested quantity
+      if (qtyRequested > 1) {
+        content += `**Total Required (for ${qtyRequested}):**\n`;
+        for (const [mat, qty] of Object.entries(materials)) {
+          const total = (parseInt(qty, 10) || 0) * qtyRequested;
+          content += `  • ${mat} x${total}\n`;
+        }
       }
       content += '\n';
     }
   }
 
-  // Provided materials
+  // Provided materials (these are totals across the request quantity)
   if (request.provided_materials_json) {
     const provided = JSON.parse(request.provided_materials_json);
     if (Object.keys(provided).length > 0) {
-      content += `**Materials Provided:**\n`;
+      content += `**Materials Provided (total):**\n`;
       for (const [mat, qty] of Object.entries(provided)) {
         content += `  • ${mat} x${qty}\n`;
       }
@@ -609,7 +797,14 @@ async function showRequestDetails(interaction, client, channel, request, include
   // Schedule cleanup if user becomes inactive (SUBMENU = request details view)
   if (config.requestMode === 'dm' && channel.type === ChannelType.DM) {
     const timeout = cleanupService.getCleanupTimeout(cleanupService.MessageType.SUBMENU);
-    cleanupService.scheduleDMCleanup(channel, client, timeout, userId);
+    cleanupService.scheduleDMCleanup(
+      channel,
+      client,
+      timeout,
+      userId,
+      'submenu',
+      cleanupService.MessageType.SUBMENU
+    );
   }
   
   if (!interaction.replied && !interaction.deferred) {
@@ -657,7 +852,9 @@ async function showAuditLogList(interaction, client, page = 0) {
       const submittedTime = new Date(req.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
       
       // Truncate long item names to fit in character limit
-      const itemName = req.request_name.length > 35 ? req.request_name.substring(0, 32) + '...' : req.request_name;
+      const baseName = req.request_name.length > 35 ? req.request_name.substring(0, 32) + '...' : req.request_name;
+      const qty = parseInt(req.quantity_requested || req.quantity || 1, 10) || 1;
+      const itemName = qty > 1 ? `${baseName} x${qty}` : baseName;
       
       content += `**#${req.id}** ${req.character} - ${itemName}\n`;
       content += `└ ${req.status} | ${submittedDate} ${submittedTime}\n\n`;
@@ -712,7 +909,14 @@ async function showAuditLogList(interaction, client, page = 0) {
   // Schedule cleanup if user becomes inactive (SUBMENU = audit list)
   if (config.requestMode === 'dm' && channel.type === ChannelType.DM) {
     const timeout = cleanupService.getCleanupTimeout(cleanupService.MessageType.SUBMENU);
-    cleanupService.scheduleDMCleanup(channel, client, timeout, userId);
+    cleanupService.scheduleDMCleanup(
+      channel,
+      client,
+      timeout,
+      userId,
+      'submenu',
+      cleanupService.MessageType.SUBMENU
+    );
   }
   
   await interaction.deferUpdate();
@@ -771,7 +975,14 @@ async function showAuditLogSearchResults(interaction, client, characterName, pag
       // Schedule cleanup
       if (config.requestMode === 'dm' && channel.type === ChannelType.DM) {
         const timeout = cleanupService.getCleanupTimeout(cleanupService.MessageType.SUBMENU);
-        cleanupService.scheduleDMCleanup(channel, client, timeout, userId);
+        cleanupService.scheduleDMCleanup(
+          channel,
+          client,
+          timeout,
+          userId,
+          'submenu',
+          cleanupService.MessageType.SUBMENU
+        );
       }
       
       if (interaction.isModalSubmit()) {
@@ -799,7 +1010,9 @@ async function showAuditLogSearchResults(interaction, client, characterName, pag
       const submittedTime = new Date(req.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
       
       // Truncate long item names to fit in character limit
-      const itemName = req.request_name.length > 35 ? req.request_name.substring(0, 32) + '...' : req.request_name;
+      const baseName = req.request_name.length > 35 ? req.request_name.substring(0, 32) + '...' : req.request_name;
+      const qty = parseInt(req.quantity_requested || req.quantity || 1, 10) || 1;
+      const itemName = qty > 1 ? `${baseName} x${qty}` : baseName;
       
       content += `**#${req.id}** ${req.character} - ${itemName}\n`;
       content += `└ ${req.status} | ${submittedDate} ${submittedTime}\n\n`;
@@ -840,7 +1053,14 @@ async function showAuditLogSearchResults(interaction, client, characterName, pag
     // Schedule cleanup if user becomes inactive
     if (config.requestMode === 'dm' && channel.type === ChannelType.DM) {
       const timeout = cleanupService.getCleanupTimeout(cleanupService.MessageType.SUBMENU);
-      cleanupService.scheduleDMCleanup(channel, client, timeout, userId);
+      cleanupService.scheduleDMCleanup(
+        channel,
+        client,
+        timeout,
+        userId,
+        'submenu',
+        cleanupService.MessageType.SUBMENU
+      );
     }
     
     if (interaction.isModalSubmit()) {
@@ -1162,28 +1382,27 @@ async function handleAdminMarkComplete(interaction, client, requestId) {
       return;
     }
 
-    // Mark as complete
-    await db.completeRequest(requestId, userId);
+    // Instead of immediately completing, prompt admin for completed quantity
+    const qtyRequested = parseInt(request.quantity_requested || request.quantity || 1, 10) || 1;
+    const qtyCompleted = parseInt(request.quantity_completed || 0, 10) || 0;
+    const remaining = Math.max(0, qtyRequested - qtyCompleted);
 
-    // Notify requester
-    try {
-      const requesterUser = await client.users.fetch(request.requester_id);
-      await requesterUser.send(
-        `✅ Your request **#${requestId}** for **${request.request_name}** on **${request.character}** has been completed!`
-      );
-    } catch (err) {
-      log.warn(`[ADMIN_CRAFTS] Could not DM requester ${request.requester_id}:`, err);
-    }
+    const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
+    const modal = new ModalBuilder()
+      .setCustomId(`complete_modal_${requestId}`)
+      .setTitle('Mark Request Complete (Admin)');
 
-    await interaction.reply({
-      content: `✅ Request #${requestId} has been marked as complete.`,
-      flags: 1 << 6
-    });
+    const input = new TextInputBuilder()
+      .setCustomId('completed_qty')
+      .setLabel(`Completed (remaining: ${remaining})`)
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder(String(remaining))
+      .setRequired(true)
+      .setValue(String(remaining));
 
-    // Refresh the request details
-    const updatedRequest = await db.getRequestById(requestId);
-    await cleanupService.cleanupFromLevel(userId, client, 4);
-    await showRequestDetails(interaction, client, channel, updatedRequest, true);
+    modal.addComponents(new ActionRowBuilder().addComponents(input));
+    await interaction.showModal(modal);
+    return;
   } catch (err) {
     log.error('[ADMIN_CRAFTS] Failed to mark request complete:', err);
     await interaction.reply({
@@ -1247,10 +1466,12 @@ async function handleAdminReopen(interaction, client, requestId) {
 
 module.exports = {
   handleAdminSummary,
+  handleAdminSummaryPage,
   handleAdminByProfession,
   handleAdminProfessionDropdown,
   handleAdminByCrafter,
   handleAdminCrafterDropdown,
+  handleAdminCrafterPage,
   handleAdminLookup,
   handleAdminLookupModal,
   handleAdminAudit,

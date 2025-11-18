@@ -1,11 +1,16 @@
 // utils/requestFormatter.js
 
 /**
- * Human‐readable title of any request row.
+ * Human‐readable title of any request row, including quantity when > 1.
  */
 function getRequestLabel(req) {
-    return req.request_name;
+  const base = req.request_name || '';
+  const qty = parseInt(req.quantity_requested || req.quantity || 1, 10) || 1;
+  if (qty > 1) {
+    return `${base} x${qty}`;
   }
+  return base;
+}
   
   /**
    * Profession subtitle (e.g. “Enchanting”, “Alchemy”, etc).

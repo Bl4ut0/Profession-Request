@@ -72,7 +72,14 @@ async function handleRequestsOverview(interaction, client) {
     cleanupService.scheduleChannelDeletion(channel, timeout);
   } else if (config.requestMode === 'dm') {
     const timeout = cleanupService.getCleanupTimeout(cleanupService.MessageType.SUBMENU);
-    cleanupService.scheduleDMCleanup(channel, client, timeout, interaction.user.id);
+    cleanupService.scheduleDMCleanup(
+      channel,
+      client,
+      timeout,
+      interaction.user.id,
+      'submenu',
+      cleanupService.MessageType.SUBMENU
+    );
   }
 
   const confirmation = getNavigationMessage(interaction, channel);

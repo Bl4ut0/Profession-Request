@@ -210,5 +210,25 @@ module.exports = {
   // Enable verbose console logging for development
   // When true: Logs detailed flow information, cleanup operations, database queries
   // When false: Only logs warnings and errors
-  debugMode: true
+  debugMode: true,
+
+  // ========================================
+  // PRIMARY MENU MESSAGE CONFIGURATION
+  // ========================================
+  primaryMenuMessage: `# 📌 **Welcome to the Guild Request System!**
+
+**🔨 Manage Requests** — For crafters and admins to manage the crafting queue
+
+Use the buttons below to interact with the bot:
+• **🧵 Create New Request** — Start a new profession request
+• **📋 My Requests** — Check your personal requests
+• **👤 Manage Characters** — Register or manage your characters
+
+You can also use these slash commands (server only, won't work in DM):
+• **/request** — Start a new profession request
+• **/status** — Check your personal requests
+• **/register** — Manage your main and alt characters
+• **/requests** — View all profession requests by status/profession
+
+Please follow guild rules and have all required materials ready.`
 };

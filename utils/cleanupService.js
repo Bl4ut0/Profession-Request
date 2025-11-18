@@ -404,15 +404,21 @@ async function cleanupDMMessages(dmChannel, client) {
 }
 
 /**
- * Schedules DM message cleanup after a custom delay (e.g., for confirmation messages).
+ * Schedules DM message cleanup after a custom delay.
  * Only executes if user is not active when timer fires.
  * Prevents duplicate timers for the same user.
+ * Respects hierarchy cleanup protocol via cleanupType:
+ *   - 'submenu': cleans hierarchy levels 3+ (preserves levels 1-2) when hierarchy exists
+ *   - 'completion': performs full DM cleanup (all bot messages in DM)
+ * timeoutType controls reschedule timing when user is still active.
  * @param {import('discord.js').DMChannel} dmChannel The DM channel to clean.
  * @param {import('discord.js').Client} client The Discord client instance.
  * @param {number} delay Delay in milliseconds before cleanup.
  * @param {string} userId The user ID to track activity.
+ * @param {'submenu'|'completion'} [cleanupType='submenu'] Cleanup behavior mode.
+ * @param {'primaryMenu'|'submenu'|'completion'} [timeoutType=MessageType.SUBMENU] Which timeout category to use on reschedule if user is active.
  */
-function scheduleDMCleanup(dmChannel, client, delay, userId) {
+function scheduleDMCleanup(dmChannel, client, delay, userId, cleanupType = 'submenu', timeoutType = MessageType.SUBMENU) {
     if (!dmChannel || !client) return;
 
     // Use userId-based timer ID to prevent duplicates
@@ -427,44 +433,43 @@ function scheduleDMCleanup(dmChannel, client, delay, userId) {
     const timer = setTimeout(async () => {
         // Only cleanup if user is NOT active (prevents mid-flow cleanup)
         if (!isUserActive(userId)) {
-            log.info(`[CLEANUP] Executing DM cleanup for ${dmChannel.recipient?.tag || 'user'} (inactive)`);
-            
-            // Check if there are actually messages to clean before running cleanup
-            const messages = await dmChannel.messages.fetch({ limit: config.recentMessageSearchLimit }).catch(() => null);
-            if (!messages) {
-                log.debug(`[CLEANUP] Could not fetch messages for user ${userId}, stopping cleanup cycle`);
-                clearUserActivity(userId);
-                activeTimers.delete(timerId);
-                return;
-            }
-            
-            const botMessages = messages.filter(m => 
-                m.author.id === client.user.id &&
-                !m.content?.includes('📌 **Welcome to the Guild Request System!**') &&
-                !m.content?.includes('🔨 **Manage Requests - Crafter Menu**') &&
-                !m.content?.includes('⚙️ **Manage Requests - Admin Menu**')
-            );
-            
-            if (botMessages.size > 0) {
-                // There are messages to clean, execute full cleanup
-                await cleanupDMMessages(dmChannel, client);
-                clearUserActivity(userId);
-                log.debug(`[CLEANUP] Cleaned ${botMessages.size} messages, cleanup cycle complete`);
+        log.info(`[CLEANUP] Executing DM cleanup (${cleanupType}) for ${dmChannel.recipient?.tag || 'user'} (inactive)`);
+
+        try {
+          if (cleanupType === 'submenu') {
+            // Hierarchy-aware cleanup first, otherwise use submenu cleanup filter
+            if (menuHierarchy.has(userId)) {
+              await cleanupFromLevel(userId, client, 2);
+              log.debug(`[CLEANUP] Submenu timeout: cleaned levels 2+ for user ${userId}`);
             } else {
-                // No messages to clean, stop the cleanup cycle
-                log.debug(`[CLEANUP] No messages to clean for user ${userId}, stopping cleanup cycle`);
-                clearUserActivity(userId);
+              await cleanupSubmenuMessages(userId, client);
+              log.debug('[CLEANUP] Submenu timeout: no hierarchy found, ran submenu cleanup filter');
             }
+          } else {
+            // completion: full DM cleanup, removes all bot messages in DM including primary menu
+            await cleanupDMMessages(dmChannel, client);
+            log.debug(`[CLEANUP] Completion timeout: full DM cleanup executed for user ${userId}`);
+          }
+        } catch (err) {
+          log.warn(`[CLEANUP] Error during DM cleanup: ${err.message}`);
+        } finally {
+          clearUserActivity(userId);
+        }
         } else {
-            log.info(`[CLEANUP] Skipped DM cleanup for ${dmChannel.recipient?.tag || 'user'} (user still active)`);
-            // Reschedule for later check only if user is still active
-            scheduleDMCleanup(dmChannel, client, getCleanupTimeout(MessageType.SUBMENU), userId);
+        log.info(`[CLEANUP] Skipped DM cleanup for ${dmChannel.recipient?.tag || 'user'} (user still active)`);
+        // Reschedule with the same cleanupType and the appropriate timeout bucket
+        const nextDelay = timeoutType === MessageType.PRIMARY_MENU
+          ? getCleanupTimeout(MessageType.PRIMARY_MENU)
+          : timeoutType === MessageType.COMPLETION
+          ? getCleanupTimeout(MessageType.COMPLETION)
+          : getCleanupTimeout(MessageType.SUBMENU);
+        scheduleDMCleanup(dmChannel, client, nextDelay, userId, cleanupType, timeoutType);
         }
         activeTimers.delete(timerId);
     }, delay);
 
     activeTimers.set(timerId, timer);
-    log.info(`[CLEANUP] Scheduled DM cleanup for ${dmChannel.recipient?.tag || 'user'} in ${delay / 1000}s`);
+    log.info(`[CLEANUP] Scheduled DM cleanup (${cleanupType}/${timeoutType}) for ${dmChannel.recipient?.tag || 'user'} in ${delay / 1000}s`);
 }
 
 /**

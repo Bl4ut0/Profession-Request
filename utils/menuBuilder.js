@@ -7,6 +7,7 @@ const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
  * @returns {Object} { content, components }
  */
 function buildMainMenu() {
+  const config = require('../config/config.js');
   // First row: Manage Requests button (separated, top position)
   const row1 = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
@@ -31,19 +32,7 @@ function buildMainMenu() {
       .setStyle(ButtonStyle.Secondary)
   );
 
-  const content = 
-    `📌 **Welcome to the Guild Request System!**\n\n` +
-    `**🔨 Manage Requests** — For crafters and admins to manage the crafting queue\n\n` +
-    `Use the buttons below to interact with the bot:\n` +
-    `• 🧵 **Create New Request** — Start a new profession request\n` +
-    `• 📋 **My Requests** — Check your personal requests\n` +
-    `• 👤 **Manage Characters** — Register or manage your characters\n\n` +
-    `You can also use these slash commands (server only, won't work in DM):\n` +
-    `• **/request** — Start a new profession request\n` +
-    `• **/status** — Check your personal requests\n` +
-    `• **/register** — Manage your main and alt characters\n` +
-    `• **/requests** — View all profession requests by status/profession\n\n` +
-    `Please follow guild rules and have all required materials ready.`;
+  const content = config.primaryMenuMessage;
 
   return {
     content,

@@ -148,7 +148,14 @@ async function showRequestsMenu(interaction, client, userId, alreadyDeferred = f
   // Schedule cleanup if in DM mode (SUBMENU = status menu)
   if (config.requestMode === 'dm' && channel.type === ChannelType.DM) {
     const timeout = cleanupService.getCleanupTimeout(cleanupService.MessageType.SUBMENU);
-    cleanupService.scheduleDMCleanup(channel, client, timeout, userId);
+    cleanupService.scheduleDMCleanup(
+      channel,
+      client,
+      timeout,
+      userId,
+      'submenu',
+      cleanupService.MessageType.SUBMENU
+    );
   }
 
   // Reply with navigation message (only if not already deferred)
@@ -302,7 +309,14 @@ async function showAllProfessionsSummary(interaction, client) {
   // Schedule cleanup if in DM mode (SUBMENU timeout)
   if (config.requestMode === 'dm' && channel.type === ChannelType.DM) {
     const timeout = cleanupService.getCleanupTimeout(cleanupService.MessageType.SUBMENU);
-    cleanupService.scheduleDMCleanup(channel, client, timeout, userId);
+    cleanupService.scheduleDMCleanup(
+      channel,
+      client,
+      timeout,
+      userId,
+      'submenu',
+      cleanupService.MessageType.SUBMENU
+    );
   }
 }
 
@@ -400,7 +414,14 @@ async function showProfessionRequests(interaction, profession, client) {
   // Schedule cleanup if in DM mode (SUBMENU timeout)
   if (config.requestMode === 'dm' && channel.type === ChannelType.DM) {
     const timeout = cleanupService.getCleanupTimeout(cleanupService.MessageType.SUBMENU);
-    cleanupService.scheduleDMCleanup(channel, client, timeout, userId);
+    cleanupService.scheduleDMCleanup(
+      channel,
+      client,
+      timeout,
+      userId,
+      'submenu',
+      cleanupService.MessageType.SUBMENU
+    );
   }
 }
 
@@ -540,7 +561,14 @@ async function showCompletedRequests(interaction, page = 0, profession = null, c
   // Schedule cleanup if in DM mode (SUBMENU timeout)
   if (config.requestMode === 'dm' && channel.type === ChannelType.DM) {
     const timeout = cleanupService.getCleanupTimeout(cleanupService.MessageType.SUBMENU);
-    cleanupService.scheduleDMCleanup(channel, client, timeout, userId);
+    cleanupService.scheduleDMCleanup(
+      channel,
+      client,
+      timeout,
+      userId,
+      'submenu',
+      cleanupService.MessageType.SUBMENU
+    );
   }
 }
 
@@ -619,7 +647,14 @@ async function showCancelRequestMenu(interaction, client) {
   // Schedule cleanup if in DM mode (SUBMENU timeout)
   if (config.requestMode === 'dm' && channel.type === ChannelType.DM) {
     const timeout = cleanupService.getCleanupTimeout(cleanupService.MessageType.SUBMENU);
-    cleanupService.scheduleDMCleanup(channel, client, timeout, userId);
+    cleanupService.scheduleDMCleanup(
+      channel,
+      client,
+      timeout,
+      userId,
+      'submenu',
+      cleanupService.MessageType.SUBMENU
+    );
   }
 }
 
@@ -737,7 +772,7 @@ async function handleStatusDropdown(interaction, client) {
         } catch (err) {
           log.error('[STATUS] Error returning to summary after cancel:', err);
         }
-      }, config.userFeedbackDelay || 3000);
+      }, config.confirmationMessageDelay);
       
       // Acknowledge the dropdown interaction
       await interaction.deferUpdate();
@@ -765,7 +800,7 @@ async function handleStatusDropdown(interaction, client) {
       } catch (err2) {
         log.error('[STATUS] Error returning to summary after error:', err2);
       }
-    }, config.userFeedbackDelay || 3000);
+    }, config.confirmationMessageDelay);
     
     await interaction.deferUpdate();
   }

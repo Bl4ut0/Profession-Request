@@ -44,14 +44,20 @@ function getMaterialIndicator(request) {
   // Check if user provided materials (Core or non-Core)
   try {
     const providedMats = request.provided_materials_json ? JSON.parse(request.provided_materials_json) : {};
-    const requiredMats = request.materials_json ? JSON.parse(request.materials_json) : {};
+    const requiredPerUnit = request.materials_json ? JSON.parse(request.materials_json) : {};
+    const qtyRequested = parseInt(request.quantity_requested || request.quantity || 1, 10);
+    // Multiply per-unit required amounts by requested quantity
+    const requiredMats = {};
+    for (const [mat, perQty] of Object.entries(requiredPerUnit)) {
+      requiredMats[mat] = (parseInt(perQty, 10) || 0) * qtyRequested;
+    }
     
     const providedValues = Object.values(providedMats);
     const hasAnyProvided = providedValues.some(qty => qty > 0);
     
     if (hasAnyProvided) {
       // Check if partial or full provision
-      const allFull = Object.entries(requiredMats).every(([mat, req]) => providedMats[mat] >= req);
+      const allFull = Object.entries(requiredMats).every(([mat, req]) => (providedMats[mat] || 0) >= req);
       
       if (allFull) {
         return '📦';  // Full materials provided (Core or non-Core)
@@ -149,6 +155,10 @@ async function showCrafterMenu(interaction, client, channel, professionRoles, al
       await interaction.deferUpdate();
     }
   }
+  
+  // ** CLEANUP: Remove old Level 2 messages before creating new ones **
+  // This prevents menu duplication when returning from submenu actions
+  await cleanupService.cleanupFromLevel(userId, client, 2);
   
   // If only one profession, auto-select it
   const activeProfession = selectedProfession || professionRoles[0];
@@ -251,6 +261,7 @@ async function showCrafterMenu(interaction, client, channel, professionRoles, al
   
   // Track at level 2 (profession menu)
   cleanupService.trackMenuMessage(userId, 2, professionMsg.id);
+  cleanupService.trackUserChannel(userId, channel.id);
   
   // Store selected profession in session for claim/complete operations
   await db.storeTempSession(`manage_profession_${userId}`, userId, { selected_profession: activeProfession });
@@ -258,7 +269,14 @@ async function showCrafterMenu(interaction, client, channel, professionRoles, al
   // Schedule cleanup if in DM mode (SUBMENU = profession menu)
   if (config.requestMode === 'dm' && channel.type === ChannelType.DM) {
     const timeout = cleanupService.getCleanupTimeout(cleanupService.MessageType.SUBMENU);
-    cleanupService.scheduleDMCleanup(channel, client, timeout, userId);
+    cleanupService.scheduleDMCleanup(
+      channel,
+      client,
+      timeout,
+      userId,
+      'submenu',
+      cleanupService.MessageType.SUBMENU
+    );
   }
 }
 
@@ -308,11 +326,19 @@ async function showProfessionSelector(interaction, client, channel, professionRo
   
   // Track at Level 2 (profession selector replaces profession menu temporarily)
   cleanupService.trackMenuMessage(userId, 2, msg.id);
+  cleanupService.trackUserChannel(userId, channel.id);
   
   // Schedule cleanup if in DM mode (SUBMENU = profession selector)
   if (config.requestMode === 'dm' && channel.type === ChannelType.DM) {
     const timeout = cleanupService.getCleanupTimeout(cleanupService.MessageType.SUBMENU);
-    cleanupService.scheduleDMCleanup(channel, client, timeout, userId);
+    cleanupService.scheduleDMCleanup(
+      channel,
+      client,
+      timeout,
+      userId,
+      'submenu',
+      cleanupService.MessageType.SUBMENU
+    );
   }
 }
 
@@ -333,6 +359,10 @@ async function showAdminMenu(interaction, client, channel, alreadyDeferred = fal
       await interaction.deferUpdate();
     }
   }
+
+  // ** CLEANUP: Remove old Level 2 messages before creating new ones **
+  // This prevents menu duplication when returning from submenu actions
+  await cleanupService.cleanupFromLevel(userId, client, 2);
 
   let content = '⚙️ **Manage Requests - Admin Menu**\n\n';
   content += 'Administrative oversight and management options:\n\n';
@@ -392,11 +422,19 @@ async function showAdminMenu(interaction, client, channel, alreadyDeferred = fal
   
   // Track at Level 2 (admin menu - ANCHOR POINT, same as profession menu)
   cleanupService.trackMenuMessage(userId, 2, msg.id);
+  cleanupService.trackUserChannel(userId, channel.id);
 
   // Schedule cleanup if in DM mode (SUBMENU = admin menu)
   if (config.requestMode === 'dm' && channel.type === ChannelType.DM) {
     const timeout = cleanupService.getCleanupTimeout(cleanupService.MessageType.SUBMENU);
-    cleanupService.scheduleDMCleanup(channel, client, timeout, userId);
+    cleanupService.scheduleDMCleanup(
+      channel,
+      client,
+      timeout,
+      userId,
+      'submenu',
+      cleanupService.MessageType.SUBMENU
+    );
   }
 }
 
@@ -438,7 +476,9 @@ async function handleViewMyWork(interaction, client) {
       for (let i = 0; i < activeWork.length; i++) {
         const req = activeWork[i];
         const taskNumber = i + 1;
-        const requestLabel = `${req.request_name}`;
+        const qtyRequested = parseInt(req.quantity_requested || req.quantity || 1, 10) || 1;
+        const qtySuffix = qtyRequested > 1 ? ` x${qtyRequested}` : '';
+        const requestLabel = `${req.request_name}${qtySuffix}`;
         const statusLabel = req.status === 'in_progress' ? 'In Progress' : req.status === 'claimed' ? 'Claimed' : req.status;
         content += `**${taskNumber}.** For: **${req.character}** | ${requestLabel} | Status: **${statusLabel}**\n`;
       }
@@ -450,7 +490,9 @@ async function handleViewMyWork(interaction, client) {
       for (let i = 0; i < cancelledWork.length; i++) {
         const req = cancelledWork[i];
         const taskNumber = i + 1;
-        const requestLabel = `${req.request_name}`;
+        const qtyRequested2 = parseInt(req.quantity_requested || req.quantity || 1, 10) || 1;
+        const qtySuffix2 = qtyRequested2 > 1 ? ` x${qtyRequested2}` : '';
+        const requestLabel = `${req.request_name}${qtySuffix2}`;
         content += `**${taskNumber}.** ~~For: **${req.character}** | ${requestLabel}~~ | **❌ Cancelled**`;
         if (req.deny_reason) {
           content += ` — Reason: ${req.deny_reason}`;
@@ -491,7 +533,14 @@ async function handleViewMyWork(interaction, client) {
   // Schedule cleanup if user becomes inactive (SUBMENU = viewing list)
   if (config.requestMode === 'dm' && channel.type === ChannelType.DM) {
     const timeout = cleanupService.getCleanupTimeout(cleanupService.MessageType.SUBMENU);
-    cleanupService.scheduleDMCleanup(channel, client, timeout, userId);
+    cleanupService.scheduleDMCleanup(
+      channel,
+      client,
+      timeout,
+      userId,
+      'submenu',
+      cleanupService.MessageType.SUBMENU
+    );
   }
   
   await interaction.deferUpdate();
@@ -546,7 +595,14 @@ async function handleClaimRequest(interaction, client) {
     // Schedule cleanup if in DM mode
     if (config.requestMode === 'dm' && channel.type === ChannelType.DM) {
       const timeout = cleanupService.getCleanupTimeout(cleanupService.MessageType.SUBMENU);
-      cleanupService.scheduleDMCleanup(channel, client, timeout, userId);
+      cleanupService.scheduleDMCleanup(
+        channel,
+        client,
+        timeout,
+        userId,
+        'submenu',
+        cleanupService.MessageType.SUBMENU
+      );
     }
     
     return interaction.deferUpdate();
@@ -555,11 +611,14 @@ async function handleClaimRequest(interaction, client) {
   // Build multi-select dropdown with up to 25 requests
   const options = allOpenRequests.slice(0, 25).map((req, index) => {
     const materialIndicator = getMaterialIndicator(req);
-    const label = `${index + 1}. ${req.character} | ${req.request_name}`;
+    const qtyRequested = parseInt(req.quantity_requested || req.quantity || 1, 10) || 1;
+    const qtySuffix = qtyRequested > 1 ? ` x${qtyRequested}` : '';
+    const label = `${index + 1}. ${req.character} | ${req.request_name}${qtySuffix}`;
     const professionCap = req.profession.charAt(0).toUpperCase() + req.profession.slice(1);
+    const qtyDesc = qtyRequested > 1 ? ` | Qty: ${qtyRequested}` : '';
     const description = materialIndicator 
-      ? `${professionCap} - ${req.gear_slot} ${materialIndicator === '🛡️' ? '[Guild Craft]' : '[User Materials]'}`
-      : `${professionCap} - ${req.gear_slot}`;
+      ? `${professionCap} - ${req.gear_slot} ${materialIndicator === '🛡️' ? '[Guild Craft]' : '[User Materials]'}${qtyDesc}`
+      : `${professionCap} - ${req.gear_slot}${qtyDesc}`;
     
     return {
       label,
@@ -589,7 +648,14 @@ async function handleClaimRequest(interaction, client) {
   // Schedule cleanup if user becomes inactive (SUBMENU = dropdown selection)
   if (config.requestMode === 'dm' && channel.type === ChannelType.DM) {
     const timeout = cleanupService.getCleanupTimeout(cleanupService.MessageType.SUBMENU);
-    cleanupService.scheduleDMCleanup(channel, client, timeout, userId);
+    cleanupService.scheduleDMCleanup(
+      channel,
+      client,
+      timeout,
+      userId,
+      'submenu',
+      cleanupService.MessageType.SUBMENU
+    );
   }
 
   await interaction.deferUpdate();
@@ -644,7 +710,9 @@ async function handleClaimDropdown(interaction, client) {
     if (claimedRequests.length > 0) {
       content += 'Claimed:\n';
       for (const req of claimedRequests) {
-        content += `• **#${req.id}** ${req.character} - ${req.request_name}\n`;
+        const qtyRequested = parseInt(req.quantity_requested || req.quantity || 1, 10) || 1;
+        const qtySuffix = qtyRequested > 1 ? ` x${qtyRequested}` : '';
+        content += `• **#${req.id}** ${req.character} - ${req.request_name}${qtySuffix}\n`;
       }
     }
     
@@ -710,7 +778,14 @@ async function handleMarkComplete(interaction, client) {
     // Schedule cleanup if user becomes inactive (SUBMENU = empty message)
     if (config.requestMode === 'dm' && channel.type === ChannelType.DM) {
       const timeout = cleanupService.getCleanupTimeout(cleanupService.MessageType.SUBMENU);
-      cleanupService.scheduleDMCleanup(channel, client, timeout, userId);
+      cleanupService.scheduleDMCleanup(
+        channel,
+        client,
+        timeout,
+        userId,
+        'submenu',
+        cleanupService.MessageType.SUBMENU
+      );
     }
     
     return interaction.deferUpdate();
@@ -742,7 +817,14 @@ async function handleMarkComplete(interaction, client) {
   // Schedule cleanup if user becomes inactive (SUBMENU = dropdown selection)
   if (config.requestMode === 'dm' && channel.type === ChannelType.DM) {
     const timeout = cleanupService.getCleanupTimeout(cleanupService.MessageType.SUBMENU);
-    cleanupService.scheduleDMCleanup(channel, client, timeout, userId);
+    cleanupService.scheduleDMCleanup(
+      channel,
+      client,
+      timeout,
+      userId,
+      'submenu',
+      cleanupService.MessageType.SUBMENU
+    );
   }
 
   await interaction.deferUpdate();
@@ -850,7 +932,14 @@ async function showMultiCompleteOptions(interaction, client, channel, mainReques
   // Schedule cleanup if in DM mode (SUBMENU = completion selection interface)
   if (config.requestMode === 'dm' && channel.type === ChannelType.DM) {
     const timeout = cleanupService.getCleanupTimeout(cleanupService.MessageType.SUBMENU);
-    cleanupService.scheduleDMCleanup(channel, client, timeout, userId);
+    cleanupService.scheduleDMCleanup(
+      channel,
+      client,
+      timeout,
+      userId,
+      'submenu',
+      cleanupService.MessageType.SUBMENU
+    );
   }
   
   await interaction.deferUpdate();
@@ -861,49 +950,102 @@ async function showMultiCompleteOptions(interaction, client, channel, mainReques
  */
 async function completeSingleRequest(interaction, client, channel, requestId) {
   const userId = interaction.user.id;
+  // Instead of immediately completing, show a modal to ask how many were completed
+  try {
+    const request = await db.getRequestById(requestId);
+    if (!request) {
+      return interaction.reply({ content: `❌ Request #${requestId} not found.`, flags: 1 << 6 });
+    }
 
-  // Defer immediately if not already deferred
-  if (!interaction.deferred && !interaction.replied) {
-    await interaction.deferUpdate();
+    const qtyRequested = parseInt(request.quantity_requested || request.quantity || 1, 10) || 1;
+    const qtyCompleted = parseInt(request.quantity_completed || 0, 10) || 0;
+    const remaining = Math.max(0, qtyRequested - qtyCompleted);
+
+    const { ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
+    const modal = new ModalBuilder()
+      .setCustomId(`complete_modal_${requestId}`)
+      .setTitle('Mark Request Complete');
+
+    const input = new TextInputBuilder()
+      .setCustomId('completed_qty')
+      .setLabel(`Completed (remaining: ${remaining})`)
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder(String(remaining))
+      .setRequired(true)
+      .setValue(String(remaining));
+
+    modal.addComponents(new ActionRowBuilder().addComponents(input));
+
+    await interaction.showModal(modal);
+  } catch (err) {
+    log.error('[MANAGE_CRAFTS] Failed to show completion modal:', err);
+    await interaction.reply({ content: `❌ Failed to show completion dialog: ${err.message}`, flags: 1 << 6 }).catch(() => {});
+  }
+}
+
+/**
+ * Handles modal submission for completing requests (partial or full).
+ */
+async function handleCompleteModal(interaction, client) {
+  const customId = interaction.customId; // complete_modal_{requestId}
+  const requestId = parseInt(customId.replace('complete_modal_', ''), 10);
+  const userId = interaction.user.id;
+
+  // Get request data
+  const request = await db.getRequestById(requestId);
+  if (!request) {
+    return interaction.reply({ content: `⚠️ Request #${requestId} not found.`, flags: 1 << 6 });
+  }
+
+  const qtyRequested = parseInt(request.quantity_requested || request.quantity || 1, 10) || 1;
+  const qtyCompleted = parseInt(request.quantity_completed || 0, 10) || 0;
+  const remaining = Math.max(0, qtyRequested - qtyCompleted);
+
+  let entered = 0;
+  try {
+    const value = interaction.fields.getTextInputValue('completed_qty');
+    entered = Math.max(0, Math.min(remaining, parseInt(value || '0', 10) || 0));
+  } catch (err) {
+    entered = 0;
+  }
+
+  if (entered <= 0) {
+    return interaction.reply({ content: `❌ You must enter a number between 1 and ${remaining}.`, flags: 1 << 6 });
   }
 
   try {
-    const request = await db.getRequestById(requestId);
-    await db.completeRequest(requestId, userId);
+    // Call DB partial-completion function
+    await db.completeRequestWithQuantity(requestId, userId, entered);
 
-    // Send notification to requester
+    // Notify requester if configured
     if (config.notificationSettings.notifyOnComplete) {
-      const notifMessage = `🎉 Your request **#${requestId}** for **${request.character}** has been completed!\n\n` +
-        `**Profession:** ${request.profession}\n` +
-        `**Request:** ${request.request_name} to ${request.gear_slot}\n\n` +
-        `Your item is ready!`;
-      await notifyRequester(client, request.user_id, notifMessage);
+      const requesterId = request.user_id || request.requester_id;
+      if (requesterId) {
+        const notifMessage = entered >= remaining
+          ? `🎉 Your request **#${requestId}** for **${request.character}** has been completed!`
+          : `🔔 Partial completion for request **#${requestId}**: **${entered}** item(s) completed. Remaining: **${remaining - entered}**.`;
+        try {
+          const requesterUser = await client.users.fetch(requesterId);
+          await requesterUser.send(notifMessage);
+        } catch (err) {
+          log.warn('[MANAGE_CRAFTS] Could not DM requester:', err);
+        }
+      }
     }
 
-    const content = `\u2705 Request **#${requestId}** for **${request.character}** marked as complete!`;
+    await interaction.reply({ content: `✅ Marked ${entered} item(s) complete for request #${requestId}.`, flags: 1 << 6 });
 
-    // Show confirmation and auto-return to menu
-    const confirmMsg = await channel.send({ content });
-    cleanupService.trackMenuMessage(userId, 4, confirmMsg.id);
-    
-    // Small delay to let user read the confirmation
-    await new Promise(resolve => setTimeout(resolve, config.confirmationMessageDelay));
-    
-    // Clear Level 3+ (dropdown/options and confirmation) - keeps header and profession menu
-    await cleanupService.cleanupFromLevel(userId, client, 3);
-    
-    // Re-show crafter menu (interaction already deferred) with preserved profession
-    const session = await db.getTempSession(`manage_profession_${userId}`);
-    const selectedProfession = session?.selected_profession;
-    const member = await getGuildMember(interaction, client);
-    const roles = getUserProfessionRoles(member);
-    await showCrafterMenu(interaction, client, channel, roles, true, selectedProfession);
+    // Refresh details display if applicable
+    const channel = await resolveResponseChannel(interaction, client);
+    const updatedRequest = await db.getRequestById(requestId);
+    await cleanupService.cleanupFromLevel(userId, client, 4);
+    // Try to show updated request details if admin view function available
+    if (typeof showRequestDetails === 'function') {
+      await showRequestDetails(interaction, client, channel, updatedRequest, true).catch(() => {});
+    }
   } catch (err) {
-    log.error('[MANAGE_CRAFTS] Failed to complete requests:', err);
-    // Can't reply now since we already deferred
-    await channel.send({
-      content: `❌ Failed to complete requests: ${err.message}`
-    }).catch(() => {});
+    log.error('[MANAGE_CRAFTS] Error completing request via modal:', err);
+    return interaction.reply({ content: `❌ Failed to complete request: ${err.message}`, flags: 1 << 6 });
   }
 }
 
@@ -1020,7 +1162,14 @@ async function handleReleaseRequest(interaction, client) {
     // Schedule cleanup if user becomes inactive (SUBMENU = empty message)
     if (config.requestMode === 'dm' && channel.type === ChannelType.DM) {
       const timeout = cleanupService.getCleanupTimeout(cleanupService.MessageType.SUBMENU);
-      cleanupService.scheduleDMCleanup(channel, client, timeout, userId);
+      cleanupService.scheduleDMCleanup(
+        channel,
+        client,
+        timeout,
+        userId,
+        'submenu',
+        cleanupService.MessageType.SUBMENU
+      );
     }
     
     return interaction.deferUpdate();
@@ -1053,7 +1202,14 @@ async function handleReleaseRequest(interaction, client) {
   // Schedule cleanup if user becomes inactive (SUBMENU = dropdown selection)
   if (config.requestMode === 'dm' && channel.type === ChannelType.DM) {
     const timeout = cleanupService.getCleanupTimeout(cleanupService.MessageType.SUBMENU);
-    cleanupService.scheduleDMCleanup(channel, client, timeout, userId);
+    cleanupService.scheduleDMCleanup(
+      channel,
+      client,
+      timeout,
+      userId,
+      'submenu',
+      cleanupService.MessageType.SUBMENU
+    );
   }
 
   await interaction.deferUpdate();
@@ -1179,7 +1335,14 @@ async function handleMaterialLists(interaction, client) {
   // Schedule cleanup if user becomes inactive (SUBMENU = material list menu)
   if (config.requestMode === 'dm' && channel.type === ChannelType.DM) {
     const timeout = cleanupService.getCleanupTimeout(cleanupService.MessageType.SUBMENU);
-    cleanupService.scheduleDMCleanup(channel, client, timeout, userId);
+    cleanupService.scheduleDMCleanup(
+      channel,
+      client,
+      timeout,
+      userId,
+      'submenu',
+      cleanupService.MessageType.SUBMENU
+    );
   }
 
   await interaction.deferUpdate();
@@ -1234,6 +1397,9 @@ async function handleMaterialsMaster(interaction, client) {
         const materials = JSON.parse(req.materials_json);
         log.debug(`[MATERIALS] Parsed materials for request ${req.id}:`, JSON.stringify(materials));
         
+        // Determine quantity multiplier for this request
+        const qtyMultiplier = parseInt(req.quantity_requested || req.quantity || 1, 10) || 1;
+
         // Handle array format ["Material x10", "Other x5"]
         if (Array.isArray(materials)) {
           log.warn(`[MATERIALS] Request ${req.id} has array format materials, converting...`);
@@ -1243,8 +1409,9 @@ async function handleMaterialsMaster(interaction, client) {
               const [, materialName, quantity] = match;
               const parsedQty = parseInt(quantity, 10);
               if (!isNaN(parsedQty) && parsedQty > 0) {
-                materialTotals[materialName.trim()] = (materialTotals[materialName.trim()] || 0) + parsedQty;
-                log.debug(`[MATERIALS] Added ${parsedQty} ${materialName.trim()}, total now: ${materialTotals[materialName.trim()]}`);
+                const added = parsedQty * qtyMultiplier;
+                materialTotals[materialName.trim()] = (materialTotals[materialName.trim()] || 0) + added;
+                log.debug(`[MATERIALS] Added ${added} ${materialName.trim()}, total now: ${materialTotals[materialName.trim()]}`);
               }
             }
           }
@@ -1258,8 +1425,9 @@ async function handleMaterialsMaster(interaction, client) {
             // Parse quantity to ensure it's a number
             const parsedQty = parseInt(quantity, 10);
             if (!isNaN(parsedQty) && parsedQty > 0) {
-              materialTotals[materialName] = (materialTotals[materialName] || 0) + parsedQty;
-              log.debug(`[MATERIALS] Added ${parsedQty} ${materialName}, total now: ${materialTotals[materialName]}`);
+              const added = parsedQty * qtyMultiplier;
+              materialTotals[materialName] = (materialTotals[materialName] || 0) + added;
+              log.debug(`[MATERIALS] Added ${added} ${materialName}, total now: ${materialTotals[materialName]}`);
             }
           }
         }
@@ -1291,7 +1459,14 @@ async function handleMaterialsMaster(interaction, client) {
   // Schedule cleanup if user becomes inactive (SUBMENU = material list display)
   if (config.requestMode === 'dm' && channel.type === ChannelType.DM) {
     const timeout = cleanupService.getCleanupTimeout(cleanupService.MessageType.SUBMENU);
-    cleanupService.scheduleDMCleanup(channel, client, timeout, userId);
+    cleanupService.scheduleDMCleanup(
+      channel,
+      client,
+      timeout,
+      userId,
+      'submenu',
+      cleanupService.MessageType.SUBMENU
+    );
   }
 }
 
@@ -1354,8 +1529,10 @@ async function handleMaterialsPerChar(interaction, client) {
       if (req.materials_json) {
         try {
           const materials = JSON.parse(req.materials_json);
+          const qtyMultiplier = parseInt(req.quantity_requested || req.quantity || 1, 10) || 1;
           for (const [mat, qty] of Object.entries(materials)) {
-            charMaterials[mat] = (charMaterials[mat] || 0) + qty;
+            const added = (parseInt(qty, 10) || 0) * qtyMultiplier;
+            charMaterials[mat] = (charMaterials[mat] || 0) + added;
           }
         } catch (err) {
           log.warn(`[MATERIALS] Failed to parse materials for request ${req.id}:`, err);
@@ -1384,7 +1561,14 @@ async function handleMaterialsPerChar(interaction, client) {
   // Schedule cleanup if user becomes inactive (SUBMENU = material list display)
   if (config.requestMode === 'dm' && channel.type === ChannelType.DM) {
     const timeout = cleanupService.getCleanupTimeout(cleanupService.MessageType.SUBMENU);
-    cleanupService.scheduleDMCleanup(channel, client, timeout, userId);
+    cleanupService.scheduleDMCleanup(
+      channel,
+      client,
+      timeout,
+      userId,
+      'submenu',
+      cleanupService.MessageType.SUBMENU
+    );
   }
 }
 
@@ -1521,6 +1705,7 @@ module.exports = {
   handleCompleteDropdown,
   handleCompleteMulti,
   handleCompleteSingle,
+  handleCompleteModal,
   handleReleaseRequest,
   handleReleaseDropdown,
   handleMaterialLists,

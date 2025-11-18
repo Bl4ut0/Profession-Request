@@ -72,7 +72,15 @@ async function ensureDMMenu(dmChannel, client) {
     // User has: 90s submenu timeout + 3.5min primary menu = plenty of time to return
     if (config.requestMode === 'dm' && dmChannel.recipient) {
       const timeout = cleanupService.getCleanupTimeout(cleanupService.MessageType.PRIMARY_MENU);
-      cleanupService.scheduleDMCleanup(dmChannel, client, timeout, dmChannel.recipient.id);
+      // Primary DM menu should be cleaned fully after 5 minutes of inactivity
+      cleanupService.scheduleDMCleanup(
+        dmChannel,
+        client,
+        timeout,
+        dmChannel.recipient.id,
+        'completion',
+        cleanupService.MessageType.PRIMARY_MENU
+      );
       log.debug(`[DM_MENU] Scheduled PRIMARY_MENU cleanup (${timeout/1000}s) for ${dmChannel.recipient.tag || 'user'}`);
     }
   } catch (err) {
