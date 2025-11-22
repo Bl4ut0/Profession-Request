@@ -957,6 +957,8 @@ async function handleAdminAuditModal(interaction, client) {
 async function showAuditLogSearchResults(interaction, client, characterName, page = 0) {
   const userId = interaction.user.id;
   const channel = await resolveResponseChannel(interaction, client);
+  // Ensure channel is tracked so cleanupFromLevel can delete previous pages
+  cleanupService.trackUserChannel(userId, channel.id);
   
   // Clean Level 4+ (keep header and audit list)
   await cleanupService.cleanupFromLevel(userId, client, 4);
@@ -1161,7 +1163,7 @@ async function handleAdminReassign(interaction, client, requestId) {
 
     // Build dropdown options (max 25)
     const options = crafters.map(member => ({
-      label: member.user.username.slice(0, 100),
+      label: (member.nickname || member.displayName || member.user.username).slice(0, 100),
       value: member.user.id,
       description: `${member.user.tag}`.slice(0, 100)
     })).slice(0, 25);
@@ -1227,7 +1229,7 @@ async function handleAdminReassignSelect(interaction, client, requestId) {
            status = 'claimed',
            updated_at = CURRENT_TIMESTAMP 
        WHERE id = ?`,
-      [newCrafterId, newCrafter.user.username, new Date().toISOString(), requestId]
+      [newCrafterId, (newCrafter.nickname || newCrafter.displayName || newCrafter.user.username), new Date().toISOString(), requestId]
     );
 
     // Append audit log
@@ -1262,7 +1264,7 @@ async function handleAdminReassignSelect(interaction, client, requestId) {
     }
 
     await interaction.update({
-      content: `✅ Request #${requestId} has been reassigned to ${newCrafter.user.username}.`,
+      content: `✅ Request #${requestId} has been reassigned to ${newCrafter.nickname || newCrafter.displayName || newCrafter.user.username}.`,
       components: []
     });
 

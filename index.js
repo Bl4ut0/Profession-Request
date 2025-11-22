@@ -26,8 +26,8 @@ const client = new Client({
 });
 
 client.commands = new Collection();
-
-// Dynamically load all slash commands
+/*
+// Disabled during button-only testing: do not load slash commands
 const commandFiles = fs
   .readdirSync(path.join(__dirname, './commands'))
   .filter(file => file.endsWith('.js'));
@@ -41,6 +41,7 @@ for (const file of commandFiles) {
     log.warn(`Skipped invalid command: ${file}`);
   }
 }
+*/
 
 client.once('clientReady', async () => {
   log.info(`Bot online as ${client.user.tag}`);
@@ -53,7 +54,8 @@ client.once('clientReady', async () => {
   await initDatabase();
 
   // Register slash commands with Discord
-  await registerCommands(client, process.env.CLIENT_ID, process.env.GUILD_ID);
+  // Disabled during button-only testing: do not register slash commands
+  // await registerCommands(client, process.env.CLIENT_ID, process.env.GUILD_ID);
 
   // Ensure the #requests channel (and category) exists
   await ensurePrimaryRequestChannel(client);

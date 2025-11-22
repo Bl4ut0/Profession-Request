@@ -157,12 +157,47 @@ module.exports = {
   // Must match slot names in profession JSON files (case-sensitive)
   // See: docs/PROFESSION_DATA_FORMAT.md for slot naming standards
   enabledGearSlots: [
-    "Head", "Neck", "Shoulders", "Chest", "Waist",
-    "Legs", "Feet", "Hands", "Back",
-    "Ring", "Weapon", "2H Weapon", "Shield", "Off-Hand",
-    "Bags", "Shirt"
-  ],
+    // --- Standard Gear ---
+    "Head", 
+    "Neck", 
+    "Shoulders", 
+    "Back", 
+    "Chest", 
+    "Wrist",
+    "Hands", 
+    "Waist", 
+    "Legs", 
+    "Feet", 
+    "Ring", 
+    "Trinket",
+    
+    // --- Weapons & Off-hands ---
+    "Weapon",      // 1H Weapons / Daggers
+    "2H Weapon", 
+    "Shield", 
+    "Off-Hand", 
+    "Ranged",      // Bows, Guns, Wands
 
+    // --- Consumables (Top Level) ---
+    "Potion", 
+    "Flask", 
+    "Elixir", 
+    "Food", 
+    "Drums",
+
+    // --- Enhancements (Unattached) ---
+    "Gem",         // Cut Gems (Red, Blue, Yellow, etc.)
+    "Meta Gem",    // Skyfire/Earthstorm diamonds (Alchemy transmute + JC Cut)
+    "Leg Armor",   // LW/Tailoring specific patches
+    "Scope",       // Engineering specific
+    
+    // --- Trade & Misc ---
+    "Cooldown",    // Transmutes (Alch) & Cloth (Tailoring: Spellcloth, etc.)
+    "Ammo",        // Arrows/Bullets (Engineering makes the best ammo)
+    "Bag",         // Tailoring bags & LW Quivers/Ammo pouches
+    "Bombs",       // Engineering Explosives  
+    "Device"       // Jumper Cables, Repair Bots, etc.
+  ],
   // ========================================
   // REQUEST DISPLAY CONFIGURATION
   // ========================================

@@ -251,7 +251,12 @@ async function handleInteractions(interaction, client) {
       
       switch (interaction.customId) {
         case 'action_request':
-          await client.commands.get('request').execute(interaction, client);
+          // Directly invoke the request flow so this button
+          // does not depend on the /request slash command
+          {
+            const { handleRequestFlow } = require('./shared/requestFlow');
+            await handleRequestFlow(interaction, client);
+          }
           break;
         case 'action_status':
           await handleStatusCommand(interaction, client, true); // Pass true since it's a button

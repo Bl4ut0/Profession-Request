@@ -668,7 +668,9 @@ async function handleClaimDropdown(interaction, client) {
   const selectedValues = interaction.values; // Array of selected values
   const requestIds = selectedValues.map(val => parseInt(val.replace('claim_', '')));
   const userId = interaction.user.id;
-  const userName = interaction.user.username;
+  // Prefer guild nickname/display name over global username for notifications and storage
+  const member = await getGuildMember(interaction, client);
+  const userName = (member && (member.nickname || member.displayName)) || interaction.member?.displayName || interaction.user.username;
   const channel = await resolveResponseChannel(interaction, client);
 
   // Defer immediately to prevent timeout

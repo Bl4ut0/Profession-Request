@@ -421,13 +421,23 @@ async function cleanupDMMessages(dmChannel, client) {
 function scheduleDMCleanup(dmChannel, client, delay, userId, cleanupType = 'submenu', timeoutType = MessageType.SUBMENU) {
     if (!dmChannel || !client) return;
 
-    // Use userId-based timer ID to prevent duplicates
-    const timerId = `dm_cleanup_${userId}`;
-    
-    // Cancel existing timer for this user to prevent parallel timers
+    // Maintain separate timers per user per cleanup type to avoid overwriting PRIMARY completion timers
+    const timerId = `dm_cleanup_${cleanupType}_${userId}`; // e.g., dm_cleanup_submenu_123, dm_cleanup_completion_123
+
+    // If scheduling completion, proactively cancel any pending submenu timer
+    if (cleanupType === 'completion') {
+        const submenuTimerId = `dm_cleanup_submenu_${userId}`;
+        if (activeTimers.has(submenuTimerId)) {
+            clearTimeout(activeTimers.get(submenuTimerId));
+            activeTimers.delete(submenuTimerId);
+            log.debug(`[CLEANUP] Cancelled pending submenu cleanup before scheduling completion for user ${userId}`);
+        }
+    }
+
+    // Replace existing timer of the same type to prevent duplicates
     if (activeTimers.has(timerId)) {
         clearTimeout(activeTimers.get(timerId));
-        log.debug(`[CLEANUP] Replaced existing cleanup timer for user ${userId}`);
+        log.debug(`[CLEANUP] Replaced existing ${cleanupType} cleanup timer for user ${userId}`);
     }
     
     const timer = setTimeout(async () => {
@@ -448,6 +458,12 @@ function scheduleDMCleanup(dmChannel, client, delay, userId, cleanupType = 'subm
           } else {
             // completion: full DM cleanup, removes all bot messages in DM including primary menu
             await cleanupDMMessages(dmChannel, client);
+            // After full cleanup, ensure any submenu timer is also cleared
+            const submenuTimerId = `dm_cleanup_submenu_${userId}`;
+            if (activeTimers.has(submenuTimerId)) {
+              clearTimeout(activeTimers.get(submenuTimerId));
+              activeTimers.delete(submenuTimerId);
+            }
             log.debug(`[CLEANUP] Completion timeout: full DM cleanup executed for user ${userId}`);
           }
         } catch (err) {

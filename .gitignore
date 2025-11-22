@@ -32,3 +32,7 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+#Developer Files
+/config/tbc/
+.github/
