@@ -476,11 +476,12 @@ async function handleViewMyWork(interaction, client) {
       for (let i = 0; i < activeWork.length; i++) {
         const req = activeWork[i];
         const taskNumber = i + 1;
+        const materialIndicator = getMaterialIndicator(req);
         const qtyRequested = parseInt(req.quantity_requested || req.quantity || 1, 10) || 1;
         const qtySuffix = qtyRequested > 1 ? ` x${qtyRequested}` : '';
         const requestLabel = `${req.request_name}${qtySuffix}`;
         const statusLabel = req.status === 'in_progress' ? 'In Progress' : req.status === 'claimed' ? 'Claimed' : req.status;
-        content += `**${taskNumber}.** For: **${req.character}** | ${requestLabel} | Status: **${statusLabel}**\n`;
+        content += `**${taskNumber}.** ${materialIndicator ? materialIndicator + ' ' : ''}For: **${req.character}** | ${requestLabel} | Status: **${statusLabel}**\n`;
       }
     }
     
@@ -1393,6 +1394,9 @@ async function handleMaterialsMaster(interaction, client) {
   // Aggregate all materials
   const materialTotals = {};
   for (const req of myWork) {
+    // Only include requests where the guild provides materials
+    // (requests where `provides_materials` is falsy indicate guild craft)
+    if (req.provides_materials) continue;
     if (req.materials_json) {
       try {
         log.debug(`[MATERIALS] Processing request ${req.id}, raw materials_json: ${req.materials_json}`);
@@ -1528,6 +1532,8 @@ async function handleMaterialsPerChar(interaction, client) {
     
     const charMaterials = {};
     for (const req of requests) {
+      // Only include materials for guild-provided requests (provides_materials falsy)
+      if (req.provides_materials) continue;
       if (req.materials_json) {
         try {
           const materials = JSON.parse(req.materials_json);

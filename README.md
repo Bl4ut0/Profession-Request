@@ -67,13 +67,18 @@ The bot uses the following npm packages (automatically installed with `npm insta
 
 4. **Set up environment**
    - Create a `.env` file in the root directory
-   - Add these variables (required):
+   - Add these variables (required — use the example in `.env.example`):
      ```env
-     # Discord application/bot
+     # Discord application/bot (keep these secret — do NOT commit to git)
      DISCORD_TOKEN=your_bot_token_here
      CLIENT_ID=your_application_id_here   # Application (client) ID from Developer Portal
      GUILD_ID=your_guild_id_here          # Server where slash commands will be registered
      ```
+
+   - Security note: Never paste bot tokens, client secrets, or other credentials into
+     public issues, pull requests, or chat. This repository includes an `.env.example`
+     with safe placeholders — use it to create your local `.env`. The project `.gitignore`
+     already excludes `.env` files so your secrets won't be accidentally committed.
 
 5. **Configure Discord Developer Portal (required)**
    - Go to https://discord.com/developers/applications → select your app → Bot

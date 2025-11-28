@@ -1,6 +1,9 @@
 // config/config.js.example
 // Copy this file to config.js and fill in your actual Discord IDs
-// For detailed documentation, see: docs/FLOW_STANDARDS.md and docs/17-FLOW_MESSAGE_CLEANUP.md
+// For sensitive credentials (bot token, CLIENT_ID), use a root-level `.env` file
+// and DO NOT commit it to version control. See the repository `README.md` and
+// `.env.example` for guidance. For detailed documentation, see:
+// docs/FLOW_STANDARDS.md and docs/17-FLOW_MESSAGE_CLEANUP.md
 
 module.exports = {
   // ========================================
